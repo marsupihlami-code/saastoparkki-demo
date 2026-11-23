@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="fi">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#092039">
+<meta name="description" content="Etsi ilmainen pysäköintipaikka, kiekkopaikka tai invapaikka Turun keskustasta.">
+<title>SÄÄSTÖPARKKI</title>
+<link rel="icon" href="possu.png">
+<link rel="stylesheet" href="leaflet.css">
+<link rel="stylesheet" href="style.css">
+<script defer src="leaflet.js"></script>
+<script defer src="app.js"></script>
+<body>
+<main>
+<header><img src="possu.png" alt="" width="58" height="52"><span>SÄÄSTÖPARKKI</span></header>
+<section class="intro"><h1>Lähin ilmainen paikka</h1><p>Turun keskustan pysäköintihaku</p></section>
+<div class="map-wrap"><div id="map" aria-label="Pysäköintikartta"></div><button id="location" class="loc" type="button">◎ Käytä sijaintiani</button></div>
+<section class="panel" aria-label="Pysäköintihaku">
+<div id="search">
+<fieldset><legend>Millaista paikkaa etsit?</legend>
+<label><input type="radio" name="kind" value="free" checked><span class="icon">€</span><span><strong>Ilmainen</strong><small>Maksuttomaksi merkitty alue</small></span></label>
+<label><input type="radio" name="kind" value="disc"><span class="icon">◷</span><span><strong>Kiekkopaikka</strong><small>Katso aikaraja lisäkilvestä</small></span></label>
+<label><input type="radio" name="kind" value="accessible"><span class="icon">♿</span><span><strong>Invapaikka</strong><small>Esteetön pysäköintipaikka</small></span></label>
+</fieldset>
+<button type="button" class="primary" id="find">Etsi lähin paikka</button>
+</div>
+<div id="result" hidden>
+<div class="result-heading"><div id="signs" aria-label="Rekisterissä olevat liikennemerkit"></div><div><h2 id="place"></h2><p id="distance"></p></div></div>
+<p id="condition"></p>
+<div class="actions"><a class="primary" id="directions">Avaa Google Maps</a><button type="button" id="next">Seuraava paikka</button></div>
+<button type="button" class="text-link" id="back">Vaihda paikkatyyppiä</button>
+</div>
+<p id="status" role="status" aria-live="polite"></p>
+<footer><details><summary>Lisätiedot</summary><p>Navigointi kohteeseen tapahtuu Google Mapsin avulla.</p><p><a href="https://avoindata.suomi.fi/data/fi/dataset/turun-kaupungin-liikennemerkit">Pysäköintimerkit © Turun kaupunki</a>, CC BY 4.0. Kartta, maksuttomat alueet ja reitityksen karttadata © <a href="https://www.openstreetmap.org/copyright">OpenStreetMapin tekijät</a>, ODbL. <a href="places-osm.json">Pilottialueen OSM-aineisto</a>. Lähtöpiste ja kohde lähetetään reittihaussa FOSSGISin reitityspalveluun.</p><p><a href="https://routing.openstreetmap.de/about.html">Reitityspalvelu</a> · <a href="https://www.openstreetmap.org/fixthemap">Korjaa karttaa</a></p></details></footer>
+</section>
+</main>
+</body>
+</html>
