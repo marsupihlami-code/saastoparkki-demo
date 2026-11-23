@@ -4,7 +4,7 @@ const byId = id => document.getElementById(id);
 const defaultOrigin = [60.451452, 22.265599];
 const downtown = [[60.438, 22.240], [60.466, 22.282]];
 const turkuCoverage = [[60.35, 22.05], [60.66, 22.48]];
-const version = 'compact-results-1';
+const version = 'parking-focus-1';
 const routePause = 1100;
 const routeTimeout = 11000;
 const resultBatch = 16;
@@ -26,6 +26,20 @@ let originLabel = 'Aurakatu, Kauppatorin vieressä';
 let originChosen = false;
 const originMarker = L.circleMarker(origin, {radius: 8, color: '#fff', weight: 2, fillColor: '#145ed4', fillOpacity: 1}).addTo(map);
 const routeLayer = L.layerGroup().addTo(map);
+const routeButton = byId('show-route');
+let routeBounds;
+let parkingMarker;
+
+function showRouteOverview() {
+  routeButton.hidden = true;
+  map.invalidateSize({pan: false});
+  map.fitBounds(routeBounds, {padding: [26, 30], maxZoom: 17, animate: false});
+}
+
+routeButton.addEventListener('click', () => {
+  showRouteOverview();
+  parkingMarker.getElement().focus({preventScroll: true});
+});
 let placesPromise;
 let ranked = [];
 let remainingPlaces = [];
@@ -62,6 +76,7 @@ status('Valitse lähtöpiste kartalta, käytä sijaintiasi tai valitse Kauppator
 originMarker.bindTooltip('Lähtöpiste', {direction: 'bottom', permanent: true});
 
 function showSearch() {
+  routeButton.hidden = true;
   byId('result').hidden = true;
   byId('condition').hidden = true;
   document.querySelector('main').classList.remove('has-result');
@@ -176,10 +191,16 @@ function renderResult(place, route) {
   const line = route ? L.geoJSON(route.geometry, {style: {color: '#085aa5', weight: 6, opacity: .9}}).addTo(routeLayer) : null;
   if (place.ring) L.polygon(place.ring, {color: '#005fc0', fillOpacity: .33, weight: 3}).addTo(routeLayer);
   const marker = L.marker(end, {icon: L.divIcon({className: 'pin', html: symbols[place.kind], iconSize: [30, 30]})}).addTo(routeLayer);
+  parkingMarker = marker;
   marker.bindTooltip(titles[place.kind]);
-  const bounds = L.latLngBounds([origin, end]);
-  if (line) bounds.extend(line.getBounds());
-  if (place.ring) bounds.extend(L.latLngBounds(place.ring));
+  marker.getElement().setAttribute('aria-label', 'Zoomaa pysäköintipaikkaan');
+  marker.on('click', () => {
+    map.setView(end, map.getMaxZoom(), {animate: false});
+    routeButton.hidden = false;
+  });
+  routeBounds = L.latLngBounds([origin, end]);
+  if (line) routeBounds.extend(line.getBounds());
+  if (place.ring) routeBounds.extend(L.latLngBounds(place.ring));
 
   const steps = route ? route.legs.reduce((all, leg) => all.concat(leg.steps || []), []) : [];
   const street = steps.slice().reverse().find(step => step.name);
@@ -219,8 +240,7 @@ function renderResult(place, route) {
   const notice = route ? (route.distance > 3000 ? 'Kohde on yli 3 km:n ajomatkan päässä. ' : '') : 'Ajoreittiä ei saatavilla. ';
   status(notice + 'Paikan vapautta ei tiedetä.');
   byId('place').focus({preventScroll: true});
-  map.invalidateSize({pan: false});
-  map.fitBounds(bounds, {padding: [26, 30], maxZoom: 17, animate: false});
+  showRouteOverview();
 }
 
 async function rankBatch(batch) {
