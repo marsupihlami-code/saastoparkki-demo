@@ -9,7 +9,7 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 let origin = L.latLng(60.451452, 22.265599);
 const originMarker = L.circleMarker(origin, {radius: 8, color: '#fff', weight: 2, fillColor: '#145ed4', fillOpacity: 1}).addTo(map);
 const routeLayer = L.layerGroup().addTo(map);
-const candidates = Promise.all(['places-city.json', 'places-osm.json'].map(file => fetch(file).then(response => {
+const candidates = Promise.all(['places-city.json?v=turku-wide', 'places-osm.json'].map(file => fetch(file).then(response => {
   if (!response.ok) throw new Error('Aineistovirhe');
   return response.json();
 }))).then(groups => groups.flat()).catch(() => null);
@@ -17,7 +17,6 @@ let ranked = [];
 let index = 0;
 let requestTime = 0;
 let busy = false;
-const area = L.latLngBounds([60.438, 22.240], [60.466, 22.282]);
 
 function status(message) {
   byId('status').textContent = message;
@@ -150,10 +149,6 @@ async function showNext() {
 }
 
 byId('find').addEventListener('click', async () => {
-  if (!area.contains(origin)) {
-    status('Pilotti kattaa Turun keskustan. Valitse lähtöpiste keskustan kartalta.');
-    return;
-  }
   setBusy(true);
   status('Etsitään kohteita ja lasketaan ajomatkaa…');
   try {
@@ -164,7 +159,7 @@ byId('find').addEventListener('click', async () => {
       .map(place => ({...place, air: origin.distanceTo([place.lat, place.lng])}))
       .sort((a, b) => a.air - b.air).slice(0, 16);
     if (!nearby.length) {
-      status('Tälle paikkatyypille ei löytynyt kohteita pilottialueelta.');
+      status('Tälle paikkatyypille ei löytynyt kohteita aineistosta.');
       return;
     }
     const path = [origin, ...nearby].map(coordinate).join(';');
