@@ -418,3 +418,7 @@ label.selected .icon {
   display: block;
   color: #ffb1b1;
 }
+
+.plates:has(.main-sign + .plate) .main-sign {
+  justify-self: stretch;
+}
