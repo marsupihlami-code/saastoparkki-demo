@@ -4,7 +4,7 @@ const byId = id => document.getElementById(id);
 const defaultOrigin = [60.451452, 22.265599];
 const downtown = [[60.438, 22.240], [60.466, 22.282]];
 const turkuCoverage = [[60.35, 22.05], [60.66, 22.48]];
-const version = 'sign-width-2';
+const version = 'availability-copy-1';
 const routePause = 1100;
 const routeTimeout = 11000;
 const resultBatch = 16;
@@ -278,7 +278,7 @@ function renderResult(place, route) {
   byId('condition').hidden = false;
   document.querySelector('main').classList.add('has-result');
   const notice = route ? (route.distance > 3000 ? 'Kohde on yli 3 km:n ajomatkan päässä. ' : '') : 'Ajoreittiä ei saatavilla. ';
-  status(notice + 'Paikan vapautta ei tiedetä.');
+  status(notice + 'Järjestelmä ei tiedä vapaiden paikkojen määrää.');
   byId('place').focus({preventScroll: true});
   showRouteOverview();
 }
@@ -324,7 +324,7 @@ async function showNext() {
     current++;
     exhausted = !ranked.length && !remainingPlaces.length;
     renderResult(place, route);
-    if (exhausted) status((route ? '' : 'Ajoreittiä ei saatavilla. ') + 'Viimeinen kohde. Paikan vapautta ei tiedetä.');
+    if (exhausted) status((route ? '' : 'Ajoreittiä ei saatavilla. ') + 'Viimeinen kohde. Järjestelmä ei tiedä vapaiden paikkojen määrää.');
     return;
   }
   exhausted = true;
