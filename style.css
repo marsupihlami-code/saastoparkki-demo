@@ -360,3 +360,13 @@ main.has-result #show-route:not([hidden]) {
   align-items: center;
   gap: 8px;
 }
+
+.icon svg {
+  display: block;
+  width: 32px;
+  height: 32px;
+}
+label.selected .icon {
+  background: #254966;
+  color: var(--blue);
+}
