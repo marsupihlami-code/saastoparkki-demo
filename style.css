@@ -413,3 +413,8 @@ label.selected .icon {
 
 .plate:not(.main-sign) { overflow-wrap: anywhere; }
 .result-heading > div { min-width: 0; }
+
+.plate-holiday {
+  display: block;
+  color: #ffb1b1;
+}

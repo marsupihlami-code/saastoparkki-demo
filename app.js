@@ -4,7 +4,7 @@ const byId = id => document.getElementById(id);
 const defaultOrigin = [60.451452, 22.265599];
 const downtown = [[60.438, 22.240], [60.466, 22.282]];
 const turkuCoverage = [[60.35, 22.05], [60.66, 22.48]];
-const version = 'disc-plate-3';
+const version = 'disc-sign-1';
 const routePause = 1100;
 const routeTimeout = 11000;
 const resultBatch = 16;
@@ -178,20 +178,32 @@ function updateControls() {
 function formatDiscPlate(note) {
   const text = (note || '').trim();
   const duration = /\b\d+\s*(h|min)\b/i.exec(text);
-  if (!duration) return text;
+  if (!duration) return {rows: [text], holiday: ''};
   const remaining = text.replace(duration[0], '').trim();
   const range = "\\d{1,2}(?:[.:]\\d{2})?\\s*[-–]\\s*\\d{1,2}(?:[.:]\\d{2})?";
   const schedule = new RegExp('^(' + range + ')(?:\\s*\\((' + range + ')\\))?(?:\\s*(' + range + '))?$').exec(remaining);
   const rows = ['◷ ' + duration[0].replace(/\s*(h|min)$/i, ' $1')];
   if (!schedule || schedule[3] && !schedule[2]) {
     if (remaining) rows.push(remaining);
-    return rows.join('\n');
+    return {rows, holiday: ''};
   }
-  const labels = ['Arkisin', 'Lauantaisin', 'Sunnuntaisin ja pyhinä'];
-  schedule.slice(1).forEach((hours, index) => {
-    if (hours) rows.push(labels[index] + ' ' + hours.replace(/\s*[-–]\s*/, '–'));
-  });
-  return rows.join('\n');
+  const normalize = hours => hours.replace(/\s*[-–]\s*/, '–');
+  rows.push(normalize(schedule[1]));
+  if (schedule[2]) rows.push('(' + normalize(schedule[2]) + ')');
+  return {rows, holiday: schedule[3] ? normalize(schedule[3]) : ''};
+}
+
+function discPlate(note) {
+  const {rows, holiday} = formatDiscPlate(note);
+  const sign = plate(rows.join('\n'));
+  if (holiday) {
+    const holidayRow = document.createElement('span');
+    holidayRow.className = 'plate-holiday';
+    holidayRow.setAttribute('aria-label', 'Sunnuntaisin ja pyhinä ' + holiday);
+    holidayRow.textContent = holiday;
+    sign.append(holidayRow);
+  }
+  return sign;
 }
 
 function plate(label, main = false) {
@@ -245,7 +257,7 @@ function renderResult(place, route) {
   const signs = byId('signs');
   signs.className = 'plates';
   signs.replaceChildren();
-  if (place.kind === 'disc') signs.append(plate('P', true), plate(formatDiscPlate(place.note)));
+  if (place.kind === 'disc') signs.append(plate('P', true), discPlate(place.note));
   if (place.kind === 'accessible' && place.main) signs.append(plate('P', true));
   if (place.kind === 'accessible') signs.append(plate('♿'));
   signs.hidden = !signs.childElementCount;
