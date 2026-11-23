@@ -4,7 +4,7 @@ const byId = id => document.getElementById(id);
 const defaultOrigin = [60.451452, 22.265599];
 const downtown = [[60.438, 22.240], [60.466, 22.282]];
 const turkuCoverage = [[60.35, 22.05], [60.66, 22.48]];
-const version = 'review-1';
+const version = 'compact-results-1';
 const routePause = 1100;
 const routeTimeout = 11000;
 const resultBatch = 16;
@@ -63,6 +63,7 @@ originMarker.bindTooltip('Lähtöpiste', {direction: 'bottom', permanent: true})
 
 function showSearch() {
   byId('result').hidden = true;
+  byId('condition').hidden = true;
   document.querySelector('main').classList.remove('has-result');
   byId('result-status').textContent = '';
   byId('search').hidden = false;
@@ -213,6 +214,7 @@ function renderResult(place, route) {
   byId('apple-maps').href = 'https://maps.apple.com/?dirflg=d&daddr=' + encodeURIComponent(place.lat + ',' + place.lng);
   byId('search').hidden = true;
   byId('result').hidden = false;
+  byId('condition').hidden = false;
   document.querySelector('main').classList.add('has-result');
   const notice = route ? (route.distance > 3000 ? 'Kohde on yli 3 km:n ajomatkan päässä. ' : '') : 'Ajoreittiä ei saatavilla. ';
   status(notice + 'Paikan vapautta ei tiedetä.');
@@ -337,3 +339,5 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
 }
 if (!navigator.onLine) status('Olet offline-tilassa. Tallennettu aineisto voi olla käytössä, mutta kartta ja ajoreitit tarvitsevat yhteyden.');
 window.addEventListener('offline', () => status('Verkkoyhteys katkesi. Ajoreititys on käytettävissä yhteyden palattua.'));
+
+byId('open-info').addEventListener('click', () => byId('info').showModal());

@@ -7,17 +7,17 @@
 <meta name="description" content="Etsi ilmainen pysäköintipaikka, kiekkopaikka tai invapaikka Turusta.">
 <title>SÄÄSTÖPARKKI</title>
 <link rel="icon" href="possu.png">
-<link rel="manifest" href="manifest.webmanifest?v=review-1">
+<link rel="manifest" href="manifest.webmanifest?v=compact-results-1">
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="stylesheet" href="leaflet.css?v=review-1">
-<link rel="stylesheet" href="style.css?v=review-1">
-<script defer src="leaflet.js?v=review-1"></script>
-<script defer src="app.js?v=review-1"></script>
+<link rel="stylesheet" href="leaflet.css?v=compact-results-1">
+<link rel="stylesheet" href="style.css?v=compact-results-1">
+<script defer src="leaflet.js?v=compact-results-1"></script>
+<script defer src="app.js?v=compact-results-1"></script>
 <body>
 <main>
-<header><img src="possu.png" alt="" width="58" height="52"><span>SÄÄSTÖPARKKI</span></header>
+<header><img src="possu.png" alt="" width="58" height="52"><span>SÄÄSTÖPARKKI</span><button type="button" id="open-info" aria-haspopup="dialog">Lisätiedot</button></header>
 <section class="intro"><h1>Lähin ilmainen paikka</h1><p>Turun pysäköintihaku</p></section>
 <div class="map-wrap"><div id="map" role="region" aria-label="Pysäköintikartta"></div><button id="location" class="loc" type="button">◎ Käytä sijaintiani</button></div>
 <section class="panel" aria-label="Pysäköintihaku">
@@ -33,16 +33,16 @@
 </div>
 <div id="result" hidden>
 <div class="result-heading"><div id="signs" aria-label="Rekisterissä olevat liikennemerkit"></div><div><h2 id="place" tabindex="-1"></h2><p id="place-kind"></p><p id="distance"></p></div></div>
-<p id="result-origin"></p><p id="result-status" role="status"></p><p id="condition"></p>
-<div class="actions"><button type="button" id="previous" disabled>Edellinen</button><span id="position"></span><button type="button" id="next">Seuraava</button></div><a class="primary" id="directions">Avaa Google Maps</a><a class="text-link secondary-map" id="apple-maps">Avaa Apple Kartat</a>
+<p id="result-origin"></p><p id="result-status" role="status"></p>
+<div class="actions"><button type="button" id="previous" disabled>Edellinen</button><span id="position"></span><button type="button" id="next">Seuraava</button></div><div class="navigation-links"><a class="primary" id="directions">Google Maps</a><a class="secondary-map" id="apple-maps">Apple Kartat</a></div>
 <button type="button" class="text-link" id="back">Vaihda paikkatyyppiä</button>
 </div>
-<footer><details><summary>Lisätiedot</summary><h3>Lisää SÄÄSTÖPARKKI aloitusnäyttöön</h3>
-<p><strong>iPhone</strong><br>Avaa tämä sivu Safarissa. Napauta <strong>Jaa</strong> ja valitse <strong>Lisää Koti-valikkoon</strong>. Jos <strong>Avaa verkkoappina</strong> näkyy, laita se päälle. Napauta <strong>Lisää</strong>.</p>
-<p><strong>Android</strong><br>Avaa tämä sivu Chromessa. Napauta kolmen pisteen valikkoa (⋮) ja valitse <strong>Asenna ja luo pikakuvake</strong> tai <strong>Lisää aloitusnäyttöön</strong>. Valitse <strong>Asenna</strong>, jos sitä tarjotaan.</p>
-<p>Avaa SÄÄSTÖPARKKI jatkossa possukuvakkeesta. Verkkoappina kartta saa enemmän tilaa, kun selaimen osoite- ja alapalkki jäävät pois.</p><p>Navigointi avautuu valintasi mukaan Googlen tai Applen karttapalvelussa. OpenStreetMapin karttalaattojen lataus välittää palvelulle IP-osoitteen ja tiedon katsellusta kartta-alueesta.</p><p>Kiekko- ja invapaikkoja haetaan Turun kaupungin liikennemerkkiaineistosta. Maksuttomien alueiden kartta-aineisto kattaa keskustan.</p><p><a href="https://avoindata.suomi.fi/data/fi/dataset/turun-kaupungin-liikennemerkit">Pysäköintimerkit © Turun kaupunki</a>, CC BY 4.0. Kartta, maksuttomat alueet ja reitityksen karttadata © <a href="https://www.openstreetmap.org/copyright">OpenStreetMapin tekijät</a>, ODbL. <a href="places-osm.json">Pilottialueen OSM-aineisto</a>. Lähtöpiste ja kohde lähetetään reittihaussa FOSSGISin reitityspalveluun.</p><p><a href="https://routing.openstreetmap.de/about.html">Reitityspalvelu</a> · <a href="https://www.openstreetmap.org/fixthemap">Korjaa karttaa</a></p></details></footer>
 </section>
 </main>
+<dialog id="info" aria-labelledby="info-title"><div class="info-title"><h2 id="info-title">Lisätiedot</h2><form method="dialog"><button type="submit" autofocus>Sulje</button></form></div><p id="condition" hidden></p><h3>Lisää SÄÄSTÖPARKKI aloitusnäyttöön</h3>
+<p><strong>iPhone</strong><br>Avaa tämä sivu Safarissa. Napauta <strong>Jaa</strong> ja valitse <strong>Lisää Koti-valikkoon</strong>. Jos <strong>Avaa verkkoappina</strong> näkyy, laita se päälle. Napauta <strong>Lisää</strong>.</p>
+<p><strong>Android</strong><br>Avaa tämä sivu Chromessa. Napauta kolmen pisteen valikkoa (⋮) ja valitse <strong>Asenna ja luo pikakuvake</strong> tai <strong>Lisää aloitusnäyttöön</strong>. Valitse <strong>Asenna</strong>, jos sitä tarjotaan.</p>
+<p>Avaa SÄÄSTÖPARKKI jatkossa possukuvakkeesta. Verkkoappina kartta saa enemmän tilaa, kun selaimen osoite- ja alapalkki jäävät pois.</p><p>Navigointi avautuu valintasi mukaan Googlen tai Applen karttapalvelussa. OpenStreetMapin karttalaattojen lataus välittää palvelulle IP-osoitteen ja tiedon katsellusta kartta-alueesta.</p><p>Kiekko- ja invapaikkoja haetaan Turun kaupungin liikennemerkkiaineistosta. Maksuttomien alueiden kartta-aineisto kattaa keskustan.</p><p><a href="https://avoindata.suomi.fi/data/fi/dataset/turun-kaupungin-liikennemerkit">Pysäköintimerkit © Turun kaupunki</a>, CC BY 4.0. Kartta, maksuttomat alueet ja reitityksen karttadata © <a href="https://www.openstreetmap.org/copyright">OpenStreetMapin tekijät</a>, ODbL. <a href="places-osm.json">Pilottialueen OSM-aineisto</a>. Lähtöpiste ja kohde lähetetään reittihaussa FOSSGISin reitityspalveluun.</p><p><a href="https://routing.openstreetmap.de/about.html">Reitityspalvelu</a> · <a href="https://www.openstreetmap.org/fixthemap">Korjaa karttaa</a></p></dialog>
 </body>
 </html>
 
