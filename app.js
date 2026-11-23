@@ -1,7 +1,7 @@
 'use strict';
 
 const byId = id => document.getElementById(id);
-const map = L.map('map', {zoomControl: false}).setView([60.451452, 22.265599], 15);
+const map = L.map('map', {zoomControl: false, zoomSnap: 0.25}).setView([60.451452, 22.265599], 15);
 L.control.zoom({position: 'topright'}).addTo(map);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -94,9 +94,8 @@ function renderResult(place, route) {
   if (place.ring) L.polygon(place.ring, {color: '#005fc0', fillOpacity: .33, weight: 3}).addTo(routeLayer);
   const marker = L.marker(end, {icon: L.divIcon({className: 'pin', html: symbols[place.kind], iconSize: [30, 30]})}).addTo(routeLayer);
   marker.bindTooltip(titles[place.kind]);
-  const bounds = line.getBounds().extend(end);
+  const bounds = line.getBounds().extend(origin).extend(end);
   if (place.ring) bounds.extend(L.latLngBounds(place.ring));
-  map.fitBounds(bounds, {padding: [26, 30], maxZoom: 17});
 
   byId('place').textContent = titles[place.kind];
   const meters = route.distance;
@@ -125,6 +124,8 @@ function renderResult(place, route) {
   byId('search').hidden = true;
   byId('result').hidden = false;
   status('Paikan vapautta ei tiedetä.');
+  map.invalidateSize({pan: false});
+  map.fitBounds(bounds, {padding: [26, 30], maxZoom: 17, animate: false});
 }
 
 async function showNext() {
