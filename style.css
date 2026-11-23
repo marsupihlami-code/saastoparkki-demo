@@ -410,3 +410,6 @@ label.selected .icon {
   font-size: 1rem;
   font-weight: 750;
 }
+
+.plate:not(.main-sign) { overflow-wrap: anywhere; }
+.result-heading > div { min-width: 0; }
