@@ -1,79 +1,162 @@
 'use strict';
 
 const byId = id => document.getElementById(id);
-const map = L.map('map', {zoomControl: false, zoomSnap: 0.25}).setView([60.451452, 22.265599], 15);
-L.control.zoom({position: 'topright'}).addTo(map);
+const defaultOrigin = [60.451452, 22.265599];
+const downtown = [[60.438, 22.240], [60.466, 22.282]];
+const turkuCoverage = [[60.35, 22.05], [60.66, 22.48]];
+const version = 'review-1';
+const routePause = 1100;
+const routeTimeout = 11000;
+const resultBatch = 16;
+const sourceRadius = 70;
+const destinationRadius = 35;
+
+if (typeof L === 'undefined') {
+  byId('status').textContent = 'Karttaa ei voitu ladata. Lataa sivu uudelleen.';
+  throw new Error('Leaflet unavailable');
+}
+
+const map = L.map('map', {zoomControl: false, zoomSnap: 0.25}).setView(defaultOrigin, 15);
+L.control.zoom({position: 'topright', zoomInTitle: 'Lähennä', zoomOutTitle: 'Loitonna'}).addTo(map);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(map);
-let origin = L.latLng(60.451452, 22.265599);
+let origin = L.latLng(defaultOrigin);
+let originLabel = 'Aurakatu, Kauppatorin vieressä';
+let originChosen = false;
 const originMarker = L.circleMarker(origin, {radius: 8, color: '#fff', weight: 2, fillColor: '#145ed4', fillOpacity: 1}).addTo(map);
 const routeLayer = L.layerGroup().addTo(map);
-const candidates = Promise.all(['places-city.json?v=turku-wide', 'places-osm.json'].map(file => fetch(file).then(response => {
-  if (!response.ok) throw new Error('Aineistovirhe');
-  return response.json();
-}))).then(groups => groups.flat()).catch(() => null);
+let placesPromise;
 let ranked = [];
-let index = 0;
+let remainingPlaces = [];
+let results = [];
+let current = -1;
+let exhausted = false;
 let requestTime = 0;
 let busy = false;
+let locating = false;
 
-function status(message) {
-  byId('status').textContent = message;
+class DataError extends Error {}
+async function loadPlaces() {
+  if (!placesPromise) {
+    placesPromise = Promise.all(['places-city.json', 'places-osm.json'].map(async file => {
+      const response = await fetch(file + '?v=' + version);
+      if (!response.ok) throw new DataError();
+      return response.json();
+    })).then(groups => groups[0].concat(groups[1]));
+  }
+  try {
+    return await placesPromise;
+  } catch {
+    placesPromise = undefined;
+    throw new DataError();
+  }
 }
 
-status('Lähtöpisteenä Kauppatorin vieressä oleva Aurakatu. Voit vaihtaa sen kartalta.');
-originMarker.bindTooltip('Lähtöpiste', {direction: 'bottom'});
+function status(message) {
+  const id = byId('result').hidden ? 'status' : 'result-status';
+  byId(id).textContent = message;
+}
+
+status('Valitse lähtöpiste kartalta, käytä sijaintiasi tai valitse Kauppatori.');
+originMarker.bindTooltip('Lähtöpiste', {direction: 'bottom', permanent: true});
 
 function showSearch() {
   byId('result').hidden = true;
+  document.querySelector('main').classList.remove('has-result');
+  byId('result-status').textContent = '';
   byId('search').hidden = false;
   routeLayer.clearLayers();
+  map.invalidateSize({pan: false});
 }
 
-function setOrigin(point, message) {
-  if (busy) return;
+function setOrigin(point, label) {
   origin = point;
+  originLabel = label;
+  originChosen = true;
   originMarker.setLatLng(origin);
-  showSearch();
   map.setView(origin, 16);
-  status(message);
+  status('Lähtöpiste: ' + label + '.');
 }
 
-map.on('click', event => setOrigin(event.latlng, 'Lähtöpiste valittu kartalta.'));
+map.on('click', event => {
+  if (!busy && !locating && byId('result').hidden) setOrigin(event.latlng, 'kartalta valittu piste');
+});
+byId('center-origin').addEventListener('click', () => setOrigin(L.latLng(defaultOrigin), 'Aurakatu, Kauppatorin vieressä'));
 byId('location').addEventListener('click', () => {
   if (!navigator.geolocation) {
     status('Sijaintia ei voi käyttää tässä selaimessa. Valitse lähtöpiste kartalta.');
     return;
   }
+  locating = true;
+  updateControls();
   status('Haetaan sijaintia…');
-  navigator.geolocation.getCurrentPosition(
-    position => setOrigin(L.latLng(position.coords.latitude, position.coords.longitude), 'Lähtöpisteenä nykyinen sijaintisi.'),
-    () => status('Sijaintia ei saatu. Voit valita lähtöpisteen kartalta.'),
-    {enableHighAccuracy: true, timeout: 9000, maximumAge: 30000}
-  );
+  let resolved = false;
+  function finish(position) {
+    if (resolved) return;
+    resolved = true;
+    clearTimeout(timer);
+    locating = false;
+    updateControls();
+    if (position) {
+      setOrigin(L.latLng(position.coords.latitude, position.coords.longitude), 'nykyinen sijaintisi');
+    } else {
+      status('Sijaintia ei saatu. Yritä uudelleen tai valitse lähtöpiste kartalta.');
+    }
+  }
+  const timer = setTimeout(() => finish(null), 12000);
+  navigator.geolocation.getCurrentPosition(finish, () => finish(null),
+    {enableHighAccuracy: true, timeout: 9000, maximumAge: 30000});
 });
+
+const kindField = document.querySelector('fieldset');
+kindField.addEventListener('change', () => {
+  for (const card of kindField.querySelectorAll('label')) {
+    card.classList.toggle('selected', card.querySelector('input').checked);
+  }
+  byId('disc-filter').hidden = selectedKind() !== 'disc';
+});
+function selectedKind() {
+  return kindField.querySelector('input:checked').value;
+}
+function durationLimit(note) {
+  const match = (note || '').match(/(\d+)\s*(h|min)\b/i);
+  return match ? Number(match[1]) * (match[2].toLowerCase() === 'h' ? 60 : 1) : 0;
+}
 
 function coordinate(point) {
   return [point.lng, point.lat].map(value => value.toFixed(6)).join(',');
 }
 
 async function router(path) {
-  const remaining = 1100 - (Date.now() - requestTime);
+  const remaining = routePause - (Date.now() - requestTime);
   if (remaining > 0) await new Promise(resolve => setTimeout(resolve, remaining));
   requestTime = Date.now();
-  const response = await fetch('https://routing.openstreetmap.de/routed-car/' + path, {
-    signal: AbortSignal.timeout(11000)
-  });
-  const result = await response.json();
-  if (!response.ok && !result.code) throw new Error('Reititys ei vastannut');
-  if (result.code !== 'Ok') throw new Error(result.code || 'Reittiä ei löytynyt');
-  return result;
+  const controller = typeof AbortController === 'undefined' ? null : new AbortController();
+  let timer;
+  try {
+    const result = await Promise.race([
+      fetch('https://routing.openstreetmap.de/routed-car/' + path, controller ? {signal: controller.signal} : {})
+        .then(response => response.json()),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => {
+          if (controller) controller.abort();
+          reject(new Error('Reititys aikakatkaistiin'));
+        }, routeTimeout);
+      })
+    ]);
+    if (result.code !== 'Ok') throw new Error(result.code || 'Reittiä ei löytynyt');
+    return result;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
-function setBusy(value) {
-  busy = value;
-  for (const id of ['find', 'next', 'back', 'location']) byId(id).disabled = value;
+function updateControls() {
+  const locked = busy || locating;
+  for (const id of ['find', 'back', 'location', 'center-origin', 'disc-min']) byId(id).disabled = locked;
+  byId('previous').disabled = locked || current <= 0;
+  byId('next').disabled = locked || exhausted && current >= results.length - 1;
 }
 
 function plate(label, main = false) {
@@ -89,19 +172,26 @@ const symbols = {free: 'P', disc: 'P', accessible: '♿'};
 function renderResult(place, route) {
   routeLayer.clearLayers();
   const end = L.latLng(place.lat, place.lng);
-  const line = L.geoJSON(route.geometry, {style: {color: '#085aa5', weight: 6, opacity: .9}}).addTo(routeLayer);
+  const line = route ? L.geoJSON(route.geometry, {style: {color: '#085aa5', weight: 6, opacity: .9}}).addTo(routeLayer) : null;
   if (place.ring) L.polygon(place.ring, {color: '#005fc0', fillOpacity: .33, weight: 3}).addTo(routeLayer);
   const marker = L.marker(end, {icon: L.divIcon({className: 'pin', html: symbols[place.kind], iconSize: [30, 30]})}).addTo(routeLayer);
   marker.bindTooltip(titles[place.kind]);
-  const bounds = line.getBounds().extend(origin).extend(end);
+  const bounds = L.latLngBounds([origin, end]);
+  if (line) bounds.extend(line.getBounds());
   if (place.ring) bounds.extend(L.latLngBounds(place.ring));
 
-  byId('place').textContent = titles[place.kind];
-  const meters = route.distance;
+  const steps = route ? route.legs.reduce((all, leg) => all.concat(leg.steps || []), []) : [];
+  const street = steps.slice().reverse().find(step => step.name);
+  byId('place').textContent = street ? street.name : titles[place.kind];
+  byId('place-kind').textContent = street ? titles[place.kind] : '';
+  const meters = route ? route.distance : place.air;
   const distance = meters >= 1000
     ? new Intl.NumberFormat('fi', {maximumFractionDigits: 1}).format(meters / 1000) + ' km'
     : Math.round(meters) + ' m';
-  byId('distance').textContent = distance + ' autolla';
+  const mode = route ? ' autolla · noin ' + Math.max(1, Math.round(route.duration / 60)) + ' min' : ' linnuntietä';
+  byId('distance').textContent = distance + mode;
+  byId('result-origin').textContent = 'Lähtöpiste: ' + originLabel;
+  byId('position').textContent = 'Kohde ' + (current + 1);
   const signs = byId('signs');
   signs.className = 'plates';
   signs.replaceChildren();
@@ -120,84 +210,130 @@ function renderResult(place, route) {
     dir_action: 'navigate'
   });
   byId('directions').href = directions.href;
+  byId('apple-maps').href = 'https://maps.apple.com/?dirflg=d&daddr=' + encodeURIComponent(place.lat + ',' + place.lng);
   byId('search').hidden = true;
   byId('result').hidden = false;
-  status('Paikan vapautta ei tiedetä.');
+  document.querySelector('main').classList.add('has-result');
+  const notice = route ? (route.distance > 3000 ? 'Kohde on yli 3 km:n ajomatkan päässä. ' : '') : 'Ajoreittiä ei saatavilla. ';
+  status(notice + 'Paikan vapautta ei tiedetä.');
+  byId('place').focus({preventScroll: true});
   map.invalidateSize({pan: false});
   map.fitBounds(bounds, {padding: [26, 30], maxZoom: 17, animate: false});
 }
 
-async function showNext() {
-  while (index < ranked.length) {
-    const place = ranked[index++];
-    const destination = coordinate(place);
-    let response;
-    try {
-      response = await router('route/v1/driving/' + coordinate(origin) + ';' + destination
-        + '?overview=full&geometries=geojson&radiuses=70;35&approaches=unrestricted;curb');
-    } catch (error) {
-      if (['NoRoute', 'NoSegment'].includes(error.message)) continue;
-      index--;
-      throw error;
-    }
-    if (response.routes?.[0]) {
-      renderResult(place, response.routes[0]);
-      return;
-    }
+async function rankBatch(batch) {
+  const path = [origin, ...batch].map(coordinate).join(';');
+  const destinations = batch.map((_, i) => i + 1).join(';');
+  const approaches = ['unrestricted', ...batch.map(() => 'curb')].join(';');
+  const radiuses = [sourceRadius, ...batch.map(() => destinationRadius)].join(';');
+  try {
+    const response = await router('table/v1/driving/' + path + '?sources=0&destinations=' + destinations
+      + '&annotations=distance&approaches=' + approaches + '&radiuses=' + radiuses);
+    return batch.map((place, i) => ({...place, rankDistance: response.distances[0][i]}))
+      .filter(place => Number.isFinite(place.rankDistance))
+      .sort((a, b) => a.rankDistance - b.rankDistance);
+  } catch {
+    return batch.map(place => ({...place, fallback: true}));
   }
-  status('Tässä haussa ei ole enää muita kohteita.');
+}
+
+async function showNext() {
+  if (current + 1 < results.length) {
+    const saved = results[++current];
+    renderResult(saved.place, saved.route);
+    return;
+  }
+  while (ranked.length || remainingPlaces.length) {
+    if (!ranked.length) ranked = await rankBatch(remainingPlaces.splice(0, resultBatch));
+    if (!ranked.length) continue;
+    const place = ranked.shift();
+    let route = null;
+    if (!place.fallback) {
+      try {
+        const response = await router('route/v1/driving/' + coordinate(origin) + ';' + coordinate(place)
+          + '?overview=full&geometries=geojson&steps=true&radiuses=' + sourceRadius + ';' + destinationRadius
+          + '&approaches=unrestricted;curb');
+        route = response.routes[0] || null;
+      } catch {
+        // Coordinates remain usable when the route service is unavailable.
+      }
+    }
+    results.push({place, route});
+    current++;
+    exhausted = !ranked.length && !remainingPlaces.length;
+    renderResult(place, route);
+    if (exhausted) status((route ? '' : 'Ajoreittiä ei saatavilla. ') + 'Viimeinen kohde. Paikan vapautta ei tiedetä.');
+    return;
+  }
+  exhausted = true;
+  status('Tässä haussa ei ole enempää reititettäviä kohteita.');
 }
 
 byId('find').addEventListener('click', async () => {
-  setBusy(true);
+  if (busy || locating) return;
+  if (!originChosen) {
+    status('Valitse ensin lähtöpiste kartalta, käytä sijaintiasi tai valitse Kauppatori.');
+    byId('center-origin').focus();
+    return;
+  }
+  const kind = selectedKind();
+  if (!L.latLngBounds(turkuCoverage).contains(origin)) {
+    status('Pysäköintihaku on käytössä Turussa. Valitse hakukohta Turusta kartalla tai käytä Kauppatoria.');
+    return;
+  }
+  if (kind === 'free' && !L.latLngBounds(downtown).contains(origin)) {
+    status('Maksuttomien alueiden aineisto kattaa Turun keskustan. Valitse hakukohta keskustasta tai vaihda kiekko- tai invapaikkahakuun.');
+    return;
+  }
+  busy = true;
+  updateControls();
   status('Etsitään kohteita ja lasketaan ajomatkaa…');
   try {
-    const places = await candidates;
-    if (!places) throw new Error('Pysäköintiaineistoa ei saatu ladattua.');
-    const kind = document.querySelector('input[name="kind"]:checked').value;
-    const nearby = places.filter(place => place.kind === kind)
+    const places = await loadPlaces();
+    const minimum = kind === 'disc' ? Number(byId('disc-min').value) : 0;
+    remainingPlaces = places.filter(place => place.kind === kind && (!minimum || durationLimit(place.note) >= minimum))
       .map(place => ({...place, air: origin.distanceTo([place.lat, place.lng])}))
-      .sort((a, b) => a.air - b.air).slice(0, 16);
-    if (!nearby.length) {
-      status('Tälle paikkatyypille ei löytynyt kohteita aineistosta.');
-      return;
-    }
-    const path = [origin, ...nearby].map(coordinate).join(';');
-    const destinations = nearby.map((_, i) => i + 1).join(';');
-    const approaches = ['unrestricted', ...nearby.map(() => 'curb')].join(';');
-    const response = await router('table/v1/driving/' + path + '?sources=0&destinations=' + destinations
-      + '&annotations=distance&approaches=' + approaches);
-    const distances = response.distances?.[0] || [];
-    ranked = nearby.map((place, i) => ({...place, distance: distances[i]}))
-      .filter(place => Number.isFinite(place.distance))
-      .sort((a, b) => a.distance - b.distance);
-    index = 0;
-    if (!ranked.length) {
-      status('Näihin kohteisiin ei löytynyt ajoreittiä.');
+      .sort((a, b) => a.air - b.air);
+    ranked = [];
+    results = [];
+    current = -1;
+    exhausted = false;
+    if (!remainingPlaces.length) {
+      status('Tälle valinnalle ei löytynyt kohteita aineistosta.');
       return;
     }
     await showNext();
   } catch (error) {
-    status(error.message.includes('aineisto') ? error.message : 'Ajoreittiä ei voitu laskea. Yritä uudelleen hetken päästä.');
+    status(error instanceof DataError ? 'Pysäköintiaineistoa ei saatu ladattua. Yritä uudelleen.' : 'Hakua ei voitu suorittaa. Yritä uudelleen.');
   } finally {
-    setBusy(false);
+    busy = false;
+    updateControls();
   }
 });
 
 byId('next').addEventListener('click', async () => {
-  setBusy(true);
+  busy = true;
+  updateControls();
   status('Haetaan seuraavaa paikkaa…');
   try {
     await showNext();
-  } catch {
-    status('Seuraavaa reittiä ei saatu. Yritä uudelleen.');
   } finally {
-    setBusy(false);
+    busy = false;
+    updateControls();
   }
 });
-
+byId('previous').addEventListener('click', () => {
+  const saved = results[--current];
+  renderResult(saved.place, saved.route);
+  updateControls();
+});
 byId('back').addEventListener('click', () => {
   showSearch();
-  status('Valitse paikkatyyppi.');
-  document.querySelector('input[name="kind"]:checked').focus();
+  status('Lähtöpiste: ' + originLabel + '. Valitse paikkatyyppi.');
+  kindField.querySelector('input:checked').focus();
 });
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+if (!navigator.onLine) status('Olet offline-tilassa. Tallennettu aineisto voi olla käytössä, mutta kartta ja ajoreitit tarvitsevat yhteyden.');
+window.addEventListener('offline', () => status('Verkkoyhteys katkesi. Ajoreititys on käytettävissä yhteyden palattua.'));
