@@ -4,7 +4,7 @@ const byId = id => document.getElementById(id);
 const defaultOrigin = [60.451452, 22.265599];
 const downtown = [[60.438, 22.240], [60.466, 22.282]];
 const turkuCoverage = [[60.35, 22.05], [60.66, 22.48]];
-const version = 'sign-width-1';
+const version = 'sign-width-2';
 const routePause = 1100;
 const routeTimeout = 11000;
 const resultBatch = 16;
