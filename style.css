@@ -370,3 +370,43 @@ label.selected .icon {
   background: #254966;
   color: var(--blue);
 }
+
+#disc-filter { margin: 0 0 12px; }
+#disc-filter label {
+  display: block;
+  min-height: 0;
+  margin: 0 0 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--soft);
+  font-weight: 650;
+}
+.disc-select { position: relative; }
+.disc-select::after {
+  content: "";
+  position: absolute;
+  right: 19px;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid var(--blue);
+  border-bottom: 2px solid var(--blue);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+#disc-min {
+  appearance: none;
+  -webkit-appearance: none;
+  display: block;
+  width: 100%;
+  min-height: 50px;
+  padding: 10px 44px 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 750;
+}
