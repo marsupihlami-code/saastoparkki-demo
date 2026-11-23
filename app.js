@@ -4,7 +4,7 @@ const byId = id => document.getElementById(id);
 const defaultOrigin = [60.451452, 22.265599];
 const downtown = [[60.438, 22.240], [60.466, 22.282]];
 const turkuCoverage = [[60.35, 22.05], [60.66, 22.48]];
-const version = 'parking-focus-1';
+const version = 'parking-focus-2';
 const routePause = 1100;
 const routeTimeout = 11000;
 const resultBatch = 16;
@@ -193,10 +193,19 @@ function renderResult(place, route) {
   const marker = L.marker(end, {icon: L.divIcon({className: 'pin', html: symbols[place.kind], iconSize: [30, 30]})}).addTo(routeLayer);
   parkingMarker = marker;
   marker.bindTooltip(titles[place.kind]);
-  marker.getElement().setAttribute('aria-label', 'Zoomaa pysäköintipaikkaan');
-  marker.on('click', () => {
+  const pin = marker.getElement();
+  pin.setAttribute('role', 'button');
+  pin.setAttribute('aria-label', 'Zoomaa pysäköintipaikkaan');
+  function focusParking(event) {
+    event.preventDefault();
+    event.stopPropagation();
     map.setView(end, map.getMaxZoom(), {animate: false});
     routeButton.hidden = false;
+    if (event.type === 'keydown') routeButton.focus({preventScroll: true});
+  }
+  pin.addEventListener('click', focusParking);
+  pin.addEventListener('keydown', event => {
+    if (event.key === 'Enter' || event.key === ' ') focusParking(event);
   });
   routeBounds = L.latLngBounds([origin, end]);
   if (line) routeBounds.extend(line.getBounds());
