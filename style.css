@@ -423,3 +423,7 @@ label.selected .icon {
 .plates > .main-sign + .plate {
   justify-self: stretch;
 }
+
+.accessible-sign { display: block; width: 100%; height: auto; border-radius: 4px; }
+.plates > .accessible-sign { width: 43px; }
+.plates > .main-sign:has(+ .accessible-sign) { justify-self: center; }

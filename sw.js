@@ -1,8 +1,8 @@
 'use strict';
-const version = 'availability-copy-1';
+const version = 'accessible-sign-1';
 const cacheName = 'saastoparkki-' + version;
 const versioned = ['app.js', 'style.css', 'leaflet.js', 'leaflet.css', 'manifest.webmanifest', 'places-city.json', 'places-osm.json'];
-const shell = ['./', ...versioned.map(file => file + '?v=' + version), 'possu.png',
+const shell = ['./', ...versioned.map(file => file + '?v=' + version), 'possu.png', 'inva.webp',
   'icon-180.png', 'icon-192.png', 'icon-512.png', 'icon-maskable.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(cacheName).then(cache => cache.addAll(shell)));

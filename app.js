@@ -4,7 +4,7 @@ const byId = id => document.getElementById(id);
 const defaultOrigin = [60.451452, 22.265599];
 const downtown = [[60.438, 22.240], [60.466, 22.282]];
 const turkuCoverage = [[60.35, 22.05], [60.66, 22.48]];
-const version = 'availability-copy-1';
+const version = 'accessible-sign-1';
 const routePause = 1100;
 const routeTimeout = 11000;
 const resultBatch = 16;
@@ -214,14 +214,14 @@ function plate(label, main = false) {
 }
 
 const titles = {free: 'Ilmainen pysäköinti', disc: 'Kiekkopaikka', accessible: 'Invapaikka'};
-const symbols = {free: 'P', disc: 'P', accessible: '♿'};
+const accessibleSign = '<img class="accessible-sign" src="inva.webp" alt="">';
 
 function renderResult(place, route) {
   routeLayer.clearLayers();
   const end = L.latLng(place.lat, place.lng);
   const line = route ? L.geoJSON(route.geometry, {style: {color: '#085aa5', weight: 6, opacity: .9}}).addTo(routeLayer) : null;
   if (place.ring) L.polygon(place.ring, {color: '#005fc0', fillOpacity: .33, weight: 3}).addTo(routeLayer);
-  const marker = L.marker(end, {icon: L.divIcon({className: 'pin', html: symbols[place.kind], iconSize: [30, 30]})}).addTo(routeLayer);
+  const marker = L.marker(end, {icon: L.divIcon({className: place.kind === 'accessible' ? 'accessible-pin' : 'pin', html: place.kind === 'accessible' ? accessibleSign : 'P', iconSize: [30, 30]})}).addTo(routeLayer);
   parkingMarker = marker;
   marker.bindTooltip(titles[place.kind]);
   const pin = marker.getElement();
@@ -259,7 +259,13 @@ function renderResult(place, route) {
   signs.replaceChildren();
   if (place.kind === 'disc') signs.append(plate('P', true), discPlate(place.note));
   if (place.kind === 'accessible' && place.main) signs.append(plate('P', true));
-  if (place.kind === 'accessible') signs.append(plate('♿'));
+  if (place.kind === 'accessible') {
+    const sign = document.createElement('img');
+    sign.className = 'accessible-sign';
+    sign.src = 'inva.webp';
+    sign.alt = 'Esteettömän pysäköinnin merkki';
+    signs.append(sign);
+  }
   signs.hidden = !signs.childElementCount;
   byId('condition').textContent = place.kind === 'free'
     ? 'OpenStreetMapissa maksuttomaksi merkitty alue. Tarkista ehdot paikan päällä.'
