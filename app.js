@@ -4,7 +4,7 @@ const byId = id => document.getElementById(id);
 const defaultOrigin = [60.451452, 22.265599];
 const downtown = [[60.438, 22.240], [60.466, 22.282]];
 const turkuCoverage = [[60.35, 22.05], [60.66, 22.48]];
-const version = 'accessible-sign-1';
+const version = 'multi-kind-1';
 const routePause = 1100;
 const routeTimeout = 11000;
 const resultBatch = 16;
@@ -49,6 +49,7 @@ let exhausted = false;
 let requestTime = 0;
 let busy = false;
 let locating = false;
+let freeOutsideCoverage = false;
 
 class DataError extends Error {}
 async function loadPlaces() {
@@ -69,7 +70,9 @@ async function loadPlaces() {
 
 function status(message) {
   const id = byId('result').hidden ? 'status' : 'result-status';
-  byId(id).textContent = message;
+  const coverageNote = id === 'result-status' && freeOutsideCoverage
+    ? ' Maksuttomia alueita haetaan vain keskustasta.' : '';
+  byId(id).textContent = message + coverageNote;
 }
 
 status('Valitse lähtöpiste kartalta, käytä sijaintiasi tai valitse Kauppatori.');
@@ -130,10 +133,10 @@ kindField.addEventListener('change', () => {
   for (const card of kindField.querySelectorAll('label')) {
     card.classList.toggle('selected', card.querySelector('input').checked);
   }
-  byId('disc-filter').hidden = selectedKind() !== 'disc';
+  byId('disc-filter').hidden = !selectedKinds().has('disc');
 });
-function selectedKind() {
-  return kindField.querySelector('input:checked').value;
+function selectedKinds() {
+  return new Set(Array.from(kindField.querySelectorAll('input:checked'), input => input.value));
 }
 function durationLimit(note) {
   const match = (note || '').match(/(\d+)\s*(h|min)\b/i);
@@ -344,12 +347,19 @@ byId('find').addEventListener('click', async () => {
     byId('center-origin').focus();
     return;
   }
-  const kind = selectedKind();
+  const kinds = selectedKinds();
+  if (!kinds.size) {
+    status('Valitse vähintään yksi paikkatyyppi.');
+    kindField.querySelector('input').focus();
+    return;
+  }
   if (!L.latLngBounds(turkuCoverage).contains(origin)) {
     status('Pysäköintihaku on käytössä Turussa. Valitse hakukohta Turusta kartalla tai käytä Kauppatoria.');
     return;
   }
-  if (kind === 'free' && !L.latLngBounds(downtown).contains(origin)) {
+  freeOutsideCoverage = kinds.has('free') && !L.latLngBounds(downtown).contains(origin);
+  if (freeOutsideCoverage) kinds.delete('free');
+  if (!kinds.size) {
     status('Maksuttomien alueiden aineisto kattaa Turun keskustan. Valitse hakukohta keskustasta tai vaihda kiekko- tai invapaikkahakuun.');
     return;
   }
@@ -358,8 +368,9 @@ byId('find').addEventListener('click', async () => {
   status('Etsitään kohteita ja lasketaan ajomatkaa…');
   try {
     const places = await loadPlaces();
-    const minimum = kind === 'disc' ? Number(byId('disc-min').value) : 0;
-    remainingPlaces = places.filter(place => place.kind === kind && (!minimum || durationLimit(place.note) >= minimum))
+    const minimum = Number(byId('disc-min').value);
+    remainingPlaces = places.filter(place => kinds.has(place.kind)
+      && (place.kind !== 'disc' || !minimum || durationLimit(place.note) >= minimum))
       .map(place => ({...place, air: origin.distanceTo([place.lat, place.lng])}))
       .sort((a, b) => a.air - b.air);
     ranked = [];
@@ -397,8 +408,8 @@ byId('previous').addEventListener('click', () => {
 });
 byId('back').addEventListener('click', () => {
   showSearch();
-  status('Lähtöpiste: ' + originLabel + '. Valitse paikkatyyppi.');
-  kindField.querySelector('input:checked').focus();
+  status('Lähtöpiste: ' + originLabel + '. Valitse paikkatyypit.');
+  (kindField.querySelector('input:checked') || kindField.querySelector('input')).focus();
 });
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   navigator.serviceWorker.register('sw.js').catch(() => {});
