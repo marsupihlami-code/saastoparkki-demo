@@ -1,10 +1,43 @@
 'use strict';
 
 const byId = id => document.getElementById(id);
-const defaultOrigin = [60.451452, 22.265599];
-const downtown = [[60.438, 22.240], [60.466, 22.282]];
-const turkuCoverage = [[60.35, 22.05], [60.66, 22.48]];
-const version = 'multi-kind-1';
+const cities = {
+  turku: {
+    name: 'Turku', inCity: 'Turussa', center: 'Kauppatori', originLabel: 'Aurakatu, Kauppatorin vieressä',
+    origin: [60.451452, 22.265599],
+    downtown: [[60.438, 22.240], [60.466, 22.282]],
+    coverage: [[60.35, 22.05], [60.66, 22.48]],
+    files: ['places-city.json', 'places-osm.json']
+  },
+  tampere: {
+    name: 'Tampere', inCity: 'Tampereella', center: 'Keskustori', originLabel: 'Keskustori',
+    origin: [61.49772, 23.7595],
+    downtown: [[61.489, 23.71], [61.505, 23.805]],
+    coverage: [[61.42, 23.57], [61.64, 23.97]],
+    files: ['places-tampere.json']
+  }
+};
+const requestedCity = new URLSearchParams(location.search).get('city');
+let savedCity;
+try {
+  savedCity = localStorage.getItem('saastoparkki-city');
+} catch {}
+const cityKey = requestedCity === 'tampere' || requestedCity === 'turku'
+  ? requestedCity : savedCity === 'tampere' ? 'tampere' : 'turku';
+const city = cities[cityKey];
+try {
+  localStorage.setItem('saastoparkki-city', cityKey);
+} catch {}
+const citySelect = byId('city');
+citySelect.value = cityKey;
+citySelect.addEventListener('change', () => {
+  location.search = new URLSearchParams({city: citySelect.value}).toString();
+});
+byId('city-subheading').textContent = city.name === 'Tampere' ? 'Tampereen pysäköintihaku' : 'Turun pysäköintihaku';
+byId('turku-sources').hidden = cityKey !== 'turku';
+byId('tampere-sources').hidden = cityKey !== 'tampere';
+byId('center-origin').textContent = 'Valitse ' + city.center;
+const version = 'tampere-1';
 const routePause = 1100;
 const routeTimeout = 11000;
 const resultBatch = 16;
@@ -16,13 +49,13 @@ if (typeof L === 'undefined') {
   throw new Error('Leaflet unavailable');
 }
 
-const map = L.map('map', {zoomControl: false, zoomSnap: 0.25}).setView(defaultOrigin, 15);
+const map = L.map('map', {zoomControl: false, zoomSnap: 0.25}).setView(city.origin, 15);
 L.control.zoom({position: 'topright', zoomInTitle: 'Lähennä', zoomOutTitle: 'Loitonna'}).addTo(map);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(map);
-let origin = L.latLng(defaultOrigin);
-let originLabel = 'Aurakatu, Kauppatorin vieressä';
+let origin = L.latLng(city.origin);
+let originLabel = city.originLabel;
 let originChosen = false;
 const originMarker = L.circleMarker(origin, {radius: 8, color: '#fff', weight: 2, fillColor: '#145ed4', fillOpacity: 1}).addTo(map);
 const routeLayer = L.layerGroup().addTo(map);
@@ -54,11 +87,11 @@ let freeOutsideCoverage = false;
 class DataError extends Error {}
 async function loadPlaces() {
   if (!placesPromise) {
-    placesPromise = Promise.all(['places-city.json', 'places-osm.json'].map(async file => {
+    placesPromise = Promise.all(city.files.map(async file => {
       const response = await fetch(file + '?v=' + version);
       if (!response.ok) throw new DataError();
       return response.json();
-    })).then(groups => groups[0].concat(groups[1]));
+    })).then(groups => groups.flat());
   }
   try {
     return await placesPromise;
@@ -75,7 +108,7 @@ function status(message) {
   byId(id).textContent = message + coverageNote;
 }
 
-status('Valitse lähtöpiste kartalta, käytä sijaintiasi tai valitse Kauppatori.');
+status('Valitse lähtöpiste kartalta tai käytä sijaintiasi.');
 originMarker.bindTooltip('Lähtöpiste', {direction: 'bottom', permanent: true});
 
 function showSearch() {
@@ -101,7 +134,8 @@ function setOrigin(point, label) {
 map.on('click', event => {
   if (!busy && !locating && byId('result').hidden) setOrigin(event.latlng, 'kartalta valittu piste');
 });
-byId('center-origin').addEventListener('click', () => setOrigin(L.latLng(defaultOrigin), 'Aurakatu, Kauppatorin vieressä'));
+byId('result-limits').addEventListener('click', () => byId('info').showModal());
+byId('center-origin').addEventListener('click', () => setOrigin(L.latLng(city.origin), city.originLabel));
 byId('location').addEventListener('click', () => {
   if (!navigator.geolocation) {
     status('Sijaintia ei voi käyttää tässä selaimessa. Valitse lähtöpiste kartalta.');
@@ -196,8 +230,17 @@ function formatDiscPlate(note) {
   return {rows, holiday: schedule[3] ? normalize(schedule[3]) : ''};
 }
 
-function discPlate(note) {
-  const {rows, holiday} = formatDiscPlate(note);
+function cityDiscPlate(place) {
+  const [weekday, saturday, sunday] = place.schedule.map(time => time.replace(/\s*[-–]\s*/g, '–'));
+  const rows = [];
+  if (place.minutes) rows.push('◷ ' + (place.minutes % 60 ? place.minutes + ' min' : place.minutes / 60 + ' h'));
+  if (weekday) rows.push(weekday);
+  if (saturday) rows.push('(' + saturday + ')');
+  return {rows, holiday: sunday};
+}
+
+function discPlate(place) {
+  const {rows, holiday} = place.schedule ? cityDiscPlate(place) : formatDiscPlate(place.note);
   const sign = plate(rows.join('\n'));
   if (holiday) {
     const holidayRow = document.createElement('span');
@@ -247,8 +290,9 @@ function renderResult(place, route) {
 
   const steps = route ? route.legs.reduce((all, leg) => all.concat(leg.steps || []), []) : [];
   const street = steps.slice().reverse().find(step => step.name);
-  byId('place').textContent = street ? street.name : titles[place.kind];
-  byId('place-kind').textContent = street ? titles[place.kind] : '';
+  const address = place.address || street?.name;
+  byId('place').textContent = address || titles[place.kind];
+  byId('place-kind').textContent = address ? titles[place.kind] : '';
   const meters = route ? route.distance : place.air;
   const distance = meters >= 1000
     ? new Intl.NumberFormat('fi', {maximumFractionDigits: 1}).format(meters / 1000) + ' km'
@@ -260,7 +304,10 @@ function renderResult(place, route) {
   const signs = byId('signs');
   signs.className = 'plates';
   signs.replaceChildren();
-  if (place.kind === 'disc') signs.append(plate('P', true), discPlate(place.note));
+  if (place.kind === 'disc') {
+    signs.append(plate('P', true));
+    if (!place.schedule || place.minutes || place.schedule.some(Boolean)) signs.append(discPlate(place));
+  }
   if (place.kind === 'accessible' && place.main) signs.append(plate('P', true));
   if (place.kind === 'accessible') {
     const sign = document.createElement('img');
@@ -268,11 +315,17 @@ function renderResult(place, route) {
     sign.src = 'inva.webp';
     sign.alt = 'Esteettömän pysäköinnin merkki';
     signs.append(sign);
+    if (place.minutes || place.schedule?.some(Boolean)) signs.append(discPlate(place));
   }
   signs.hidden = !signs.childElementCount;
-  byId('condition').textContent = place.kind === 'free'
+  const condition = place.kind === 'free'
     ? 'OpenStreetMapissa maksuttomaksi merkitty alue. Tarkista ehdot paikan päällä.'
-    : 'Pysäköintiehto perustuu merkkirekisteriin. Tarkista merkit paikan päällä.';
+    : place.source === 'tampere'
+      ? 'Pysäköintiehdot perustuvat Tampereen pysäköintialueaineistoon. Tarkista merkit paikan päällä.'
+      : 'Pysäköintiehto perustuu merkkirekisteriin. Tarkista merkit paikan päällä.';
+  const restrictions = place.restrictions || [];
+  byId('condition').textContent = [condition, ...restrictions].join(' · ');
+  byId('result-limits').hidden = !restrictions.length;
   const directions = new URL('https://www.google.com/maps/dir/');
   directions.search = new URLSearchParams({
     api: '1',
@@ -343,7 +396,7 @@ async function showNext() {
 byId('find').addEventListener('click', async () => {
   if (busy || locating) return;
   if (!originChosen) {
-    status('Valitse ensin lähtöpiste kartalta, käytä sijaintiasi tai valitse Kauppatori.');
+    status('Valitse ensin lähtöpiste kartalta tai käytä sijaintiasi.');
     byId('center-origin').focus();
     return;
   }
@@ -353,14 +406,14 @@ byId('find').addEventListener('click', async () => {
     kindField.querySelector('input').focus();
     return;
   }
-  if (!L.latLngBounds(turkuCoverage).contains(origin)) {
-    status('Pysäköintihaku on käytössä Turussa. Valitse hakukohta Turusta kartalla tai käytä Kauppatoria.');
+  if (!L.latLngBounds(city.coverage).contains(origin)) {
+    status('Olet hakualueen ulkopuolella. Valitse lähtöpiste ' + city.inCity + ' tai vaihda kaupunkia.');
     return;
   }
-  freeOutsideCoverage = kinds.has('free') && !L.latLngBounds(downtown).contains(origin);
+  freeOutsideCoverage = kinds.has('free') && !L.latLngBounds(city.downtown).contains(origin);
   if (freeOutsideCoverage) kinds.delete('free');
   if (!kinds.size) {
-    status('Maksuttomien alueiden aineisto kattaa Turun keskustan. Valitse hakukohta keskustasta tai vaihda kiekko- tai invapaikkahakuun.');
+    status('Maksuttomien alueiden aineisto kattaa keskustan. Valitse hakukohta keskustasta tai vaihda kiekko- tai invapaikkahakuun.');
     return;
   }
   busy = true;
@@ -370,7 +423,7 @@ byId('find').addEventListener('click', async () => {
     const places = await loadPlaces();
     const minimum = Number(byId('disc-min').value);
     remainingPlaces = places.filter(place => kinds.has(place.kind)
-      && (place.kind !== 'disc' || !minimum || durationLimit(place.note) >= minimum))
+      && (place.kind !== 'disc' || !minimum || (place.minutes ?? durationLimit(place.note)) >= minimum))
       .map(place => ({...place, air: origin.distanceTo([place.lat, place.lng])}))
       .sort((a, b) => a.air - b.air);
     ranked = [];

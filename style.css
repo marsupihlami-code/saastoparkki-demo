@@ -427,3 +427,17 @@ label.selected .icon {
 .accessible-sign { display: block; width: 100%; height: auto; border-radius: 4px; }
 .plates > .accessible-sign { width: 43px; }
 .plates > .main-sign:has(+ .accessible-sign) { justify-self: center; }
+
+.brand { display: flex; flex-direction: column; align-items: start; min-width: 0; }
+#city {
+  min-height: 32px;
+  max-width: 100%;
+  margin-top: 2px;
+  padding-inline: 7px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  font: 600 .875rem system-ui, sans-serif;
+}
+#result-limits { margin: 0; padding-block: 4px; }
