@@ -37,7 +37,7 @@ byId('city-subheading').textContent = city.name === 'Tampere' ? 'Tampereen pysä
 byId('turku-sources').hidden = cityKey !== 'turku';
 byId('tampere-sources').hidden = cityKey !== 'tampere';
 byId('center-origin').textContent = 'Valitse ' + city.center;
-const version = 'city-search-1';
+const version = 'route-recovery-1';
 const routePause = 1100;
 const routeTimeout = 11000;
 const resultBatch = 16;
@@ -80,6 +80,7 @@ let results = [];
 let current = -1;
 let exhausted = false;
 let requestTime = 0;
+let routeCooldownUntil = 0;
 let busy = false;
 let locating = false;
 let freeOutsideCoverage = false;
@@ -182,6 +183,7 @@ function coordinate(point) {
 }
 
 async function router(path) {
+  if (Date.now() < routeCooldownUntil) throw new Error('Reitityspalvelun pyyntöraja');
   const remaining = routePause - (Date.now() - requestTime);
   if (remaining > 0) await new Promise(resolve => setTimeout(resolve, remaining));
   requestTime = Date.now();
@@ -190,7 +192,15 @@ async function router(path) {
   try {
     const result = await Promise.race([
       fetch('https://routing.openstreetmap.de/routed-car/' + path, controller ? {signal: controller.signal} : {})
-        .then(response => response.json()),
+        .then(response => {
+          if (response.status === 429 || response.status === 403) {
+            const retryAfter = response.headers.get('Retry-After');
+            const delay = Number(retryAfter) * 1000 || Date.parse(retryAfter) - Date.now();
+            routeCooldownUntil = Date.now() + Math.max(60000, delay || 0);
+          }
+          if (!response.ok) throw new Error('Reitityspyyntö epäonnistui: ' + response.status);
+          return response.json();
+        }),
       new Promise((_, reject) => {
         timer = setTimeout(() => {
           if (controller) controller.abort();
@@ -357,7 +367,8 @@ async function rankBatch(batch) {
       .filter(place => Number.isFinite(place.rankDistance))
       .sort((a, b) => a.rankDistance - b.rankDistance);
   } catch {
-    return batch.map(place => ({...place, fallback: true}));
+    // A failed distance table leaves the original order by straight-line distance.
+    return batch;
   }
 }
 
@@ -372,15 +383,13 @@ async function showNext() {
     if (!ranked.length) continue;
     const place = ranked.shift();
     let route = null;
-    if (!place.fallback) {
-      try {
-        const response = await router('route/v1/driving/' + coordinate(origin) + ';' + coordinate(place)
-          + '?overview=full&geometries=geojson&steps=true&radiuses=' + sourceRadius + ';' + destinationRadius
-          + '&approaches=unrestricted;curb');
-        route = response.routes[0] || null;
-      } catch {
-        // Coordinates remain usable when the route service is unavailable.
-      }
+    try {
+      const response = await router('route/v1/driving/' + coordinate(origin) + ';' + coordinate(place)
+        + '?overview=full&geometries=geojson&steps=true&radiuses=' + sourceRadius + ';' + destinationRadius
+        + '&approaches=unrestricted;curb');
+      route = response.routes[0] || null;
+    } catch {
+      // Coordinates remain usable when the route service is unavailable.
     }
     results.push({place, route});
     current++;
