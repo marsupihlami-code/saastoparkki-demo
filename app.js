@@ -37,12 +37,15 @@ byId('city-subheading').textContent = city.name === 'Tampere' ? 'Tampereen pysä
 byId('turku-sources').hidden = cityKey !== 'turku';
 byId('tampere-sources').hidden = cityKey !== 'tampere';
 byId('center-origin').textContent = 'Valitse ' + city.center;
-const version = 'route-recovery-1';
+const version = 'area-route-1';
 const routePause = 1100;
 const routeTimeout = 11000;
 const resultBatch = 16;
 const sourceRadius = 70;
-const destinationRadius = 35;
+// Area coordinates are inside the polygon and may be farther from the road.
+function destinationRadius(place) {
+  return place.ring ? 65 : 35;
+}
 
 if (typeof L === 'undefined') {
   byId('status').textContent = 'Karttaa ei voitu ladata. Lataa sivu uudelleen.';
@@ -359,7 +362,7 @@ async function rankBatch(batch) {
   const path = [origin, ...batch].map(coordinate).join(';');
   const destinations = batch.map((_, i) => i + 1).join(';');
   const approaches = ['unrestricted', ...batch.map(() => 'curb')].join(';');
-  const radiuses = [sourceRadius, ...batch.map(() => destinationRadius)].join(';');
+  const radiuses = [sourceRadius, ...batch.map(destinationRadius)].join(';');
   try {
     const response = await router('table/v1/driving/' + path + '?sources=0&destinations=' + destinations
       + '&annotations=distance&approaches=' + approaches + '&radiuses=' + radiuses);
@@ -385,7 +388,7 @@ async function showNext() {
     let route = null;
     try {
       const response = await router('route/v1/driving/' + coordinate(origin) + ';' + coordinate(place)
-        + '?overview=full&geometries=geojson&steps=true&radiuses=' + sourceRadius + ';' + destinationRadius
+        + '?overview=full&geometries=geojson&steps=true&radiuses=' + sourceRadius + ';' + destinationRadius(place)
         + '&approaches=unrestricted;curb');
       route = response.routes[0] || null;
     } catch {
