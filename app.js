@@ -35,7 +35,7 @@ byId('city-subheading').textContent = city.name === 'Tampere' ? 'Tampereen pysä
 byId('turku-sources').hidden = cityKey !== 'turku';
 byId('tampere-sources').hidden = cityKey !== 'tampere';
 byId('center-origin').textContent = 'Valitse ' + city.center;
-const version = 'distance-metres-1';
+const version = 'nuottasaarenkatu-1';
 const routePause = 1100;
 const routeTimeout = 11000;
 const resultBatch = 16;
@@ -317,7 +317,7 @@ function renderResult(place, route) {
     signs.append(plate('P', true));
     if (!place.schedule || place.minutes || place.schedule.some(Boolean)) signs.append(discPlate(place));
   }
-  if (place.kind === 'accessible' && place.main) signs.append(plate('P', true));
+  if ((place.kind === 'accessible' && place.main) || place.source === 'turku-signs') signs.append(plate('P', true));
   if (place.kind === 'accessible') {
     const sign = document.createElement('img');
     sign.className = 'accessible-sign';
@@ -327,7 +327,7 @@ function renderResult(place, route) {
     if (place.minutes || place.schedule?.some(Boolean)) signs.append(discPlate(place));
   }
   signs.hidden = !signs.childElementCount;
-  const condition = place.kind === 'free'
+  const condition = place.kind === 'free' && place.source !== 'turku-signs'
     ? 'OpenStreetMapissa maksuttomaksi merkitty kadunvarsikohde. Tarkista paikalla voimassa olevat pysäköintiehdot.'
     : place.source === 'tampere'
       ? 'Pysäköintiehdot perustuvat Tampereen pysäköintialueaineistoon. Tarkista merkit paikan päällä.'
