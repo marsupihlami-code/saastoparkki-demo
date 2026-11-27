@@ -7,31 +7,32 @@
 <meta name="description" content="Etsi maksuton kadunvarsipaikka, kiekkopaikka tai invapaikka Turusta tai Tampereelta.">
 <title>SÄÄSTÖPARKKI</title>
 <link rel="icon" href="possu.png">
-<link rel="manifest" href="manifest.webmanifest?v=parking-plates-1">
+<link rel="manifest" href="manifest.webmanifest?v=distance-metres-1">
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="stylesheet" href="leaflet.css?v=parking-plates-1">
-<link rel="stylesheet" href="style.css?v=parking-plates-1">
-<script defer src="leaflet.js?v=parking-plates-1"></script>
-<script defer src="app.js?v=parking-plates-1"></script>
+<link rel="stylesheet" href="leaflet.css?v=distance-metres-1">
+<link rel="stylesheet" href="style.css?v=distance-metres-1">
+<script defer src="leaflet.js?v=distance-metres-1"></script>
+<script defer src="app.js?v=distance-metres-1"></script>
 <body>
 <main>
 <header><img src="possu.png" alt="" width="58" height="52"><span>SÄÄSTÖPARKKI</span><button type="button" id="open-info" aria-haspopup="dialog">Lisätiedot</button></header>
 <section class="intro"><h1>Etsi kadunvarsipaikka</h1><p id="city-subheading">Turun pysäköintihaku</p></section>
 <div class="map-wrap"><div id="map" role="region" aria-label="Pysäköintikartta"></div><button id="location" class="loc" type="button">◎ Käytä sijaintiani</button><button id="show-route" class="loc" type="button" hidden><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 18h5a3 3 0 0 0 0-6h-1a3 3 0 0 1 0-6h6"/></svg>Koko reitti</button></div>
 <section class="panel" aria-label="Pysäköintihaku">
-<div id="search">
+<form id="search">
 <div class="origin-control"><p id="status" role="status"></p><button type="button" class="text-link" id="center-origin">Valitse Kauppatori</button></div>
 <div class="search-select-field"><label for="city">Kaupunki</label><div class="search-select"><select id="city"><option value="turku">Turku</option><option value="tampere">Tampere</option></select></div></div>
+<div class="search-select-field"><label for="search-distance">Hakuetäisyys (m)</label><input type="text" id="search-distance" inputmode="numeric" autocomplete="off" placeholder="Ei etäisyysrajaa"></div>
 <fieldset><legend>Mitä paikkatyyppejä etsit?</legend>
 <label class="selected"><input type="checkbox" name="kind" value="free" checked><span class="icon" aria-hidden="true"><svg focusable="false" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M160 96C124.7 96 96 124.7 96 160L96 480C96 515.3 124.7 544 160 544L480 544C515.3 544 544 515.3 544 480L544 160C544 124.7 515.3 96 480 96L160 96zM288 320L336 320C353.7 320 368 305.7 368 288C368 270.3 353.7 256 336 256L288 256L288 320zM336 384L288 384L288 416C288 433.7 273.7 448 256 448C238.3 448 224 433.7 224 416L224 232C224 209.9 241.9 192 264 192L336 192C389 192 432 235 432 288C432 341 389 384 336 384z"/></svg></span><span><strong>Ilmainen</strong><small>Maksuttomaksi merkitty kadunvarsipaikka</small></span></label>
 <label><input type="checkbox" name="kind" value="disc"><span class="icon" aria-hidden="true"><svg focusable="false" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M320 128C426 128 512 214 512 320C512 426 426 512 320 512C254.8 512 197.1 479.5 162.4 429.7C152.3 415.2 132.3 411.7 117.8 421.8C103.3 431.9 99.8 451.9 109.9 466.4C156.1 532.6 233 576 320 576C461.4 576 576 461.4 576 320C576 178.6 461.4 64 320 64C234.3 64 158.5 106.1 112 170.7L112 144C112 126.3 97.7 112 80 112C62.3 112 48 126.3 48 144L48 256C48 273.7 62.3 288 80 288L104.6 288C105.1 288 105.6 288 106.1 288L192.1 288C209.8 288 224.1 273.7 224.1 256C224.1 238.3 209.8 224 192.1 224L153.8 224C186.9 166.6 249 128 320 128zM344 216C344 202.7 333.3 192 320 192C306.7 192 296 202.7 296 216L296 320C296 326.4 298.5 332.5 303 337L375 409C384.4 418.4 399.6 418.4 408.9 409C418.2 399.6 418.3 384.4 408.9 375.1L343.9 310.1L343.9 216z"/></svg></span><span><strong>Kiekkopaikka</strong><small>Katso aikaraja lisäkilvestä</small></span></label>
 <label><input type="checkbox" name="kind" value="accessible"><span class="icon" aria-hidden="true"><svg focusable="false" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M200 104C200 73.1 225.1 48 256 48C286.9 48 312 73.1 312 104C312 134.9 286.9 160 256 160C225.1 160 200 134.9 200 104zM181.9 261.6L194.5 324.6C155.9 337 128 373.3 128 416C128 469 171 512 224 512C259.6 512 290.7 492.6 307.3 463.8C309.6 463.9 311.9 464 314.3 464L318.4 464C319.4 464 320.5 464 321.5 464L376.7 464C356.3 528.9 295.7 576 224 576C135.6 576 64 504.4 64 416C64 342.2 114 280.1 181.9 261.6zM330.5 233.5L354.2 352L414.7 352C448 352 477.9 372.7 489.6 403.9L515.1 471.9L533.8 465.7C550.6 460.1 568.7 469.2 574.3 485.9C579.9 502.6 570.8 520.8 554.1 526.4L506.1 542.4C489.8 547.8 472.1 539.4 466 523.3L429.7 426.4C427.4 420.2 421.4 416 414.7 416L328.6 416C328.2 416 327.8 416 327.3 416L314.2 416C283.7 416 257.4 394.5 251.4 364.6L229.3 253.7C222.9 221.8 247.3 192 279.9 192C304.5 192 325.7 209.4 330.5 233.5z"/></svg></span><span><strong>Invapaikka</strong><small>Esteetön pysäköintipaikka</small></span></label>
 </fieldset>
 <div id="disc-filter" class="search-select-field" hidden><label for="disc-min">Vähimmäisaika</label><div class="search-select"><select id="disc-min"><option value="0">Kaikki</option><option value="60">1 h</option><option value="120">2 h</option><option value="240">4 h</option></select></div></div>
-<button type="button" class="primary" id="find">Etsi lähin paikka</button>
-</div>
+<button type="submit" class="primary" id="find">Etsi lähin paikka</button>
+</form>
 <div id="result" hidden>
 <div class="result-heading"><div id="signs" aria-label="Pysäköintimerkit ja lisäkilvet"></div><div><h2 id="place" tabindex="-1"></h2><p id="place-kind"></p><p id="distance"></p></div></div>
 <p id="result-origin"></p><p id="result-status" role="status"></p><button type="button" class="text-link" id="result-limits" aria-haspopup="dialog" hidden>Katso kohteen rajoitukset</button>

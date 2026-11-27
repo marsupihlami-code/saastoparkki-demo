@@ -35,7 +35,7 @@ byId('city-subheading').textContent = city.name === 'Tampere' ? 'Tampereen pysä
 byId('turku-sources').hidden = cityKey !== 'turku';
 byId('tampere-sources').hidden = cityKey !== 'tampere';
 byId('center-origin').textContent = 'Valitse ' + city.center;
-const version = 'parking-plates-1';
+const version = 'distance-metres-1';
 const routePause = 1100;
 const routeTimeout = 11000;
 const resultBatch = 16;
@@ -216,7 +216,7 @@ async function router(path) {
 
 function updateControls() {
   const locked = busy || locating;
-  for (const id of ['find', 'back', 'location', 'center-origin', 'disc-min']) byId(id).disabled = locked;
+  for (const id of ['find', 'back', 'location', 'center-origin', 'disc-min', 'search-distance']) byId(id).disabled = locked;
   byId('previous').disabled = locked || current <= 0;
   byId('next').disabled = locked || exhausted && current >= results.length - 1;
 }
@@ -418,11 +418,26 @@ async function showNext() {
   status('Tässä haussa ei ole enempää reititettäviä kohteita.');
 }
 
-byId('find').addEventListener('click', async () => {
+function searchRadius(value) {
+  const text = value.trim();
+  if (!text) return Infinity;
+  const metres = Number(text);
+  return /^\d+$/.test(text) && Number.isSafeInteger(metres) && metres > 0 ? metres : NaN;
+}
+
+byId('search').addEventListener('submit', async event => {
+  event.preventDefault();
   if (busy || locating) return;
   if (!originChosen) {
     status('Valitse ensin lähtöpiste kartalta tai käytä sijaintiasi.');
     byId('center-origin').focus();
+    return;
+  }
+  const distanceField = byId('search-distance');
+  const radius = searchRadius(distanceField.value);
+  if (Number.isNaN(radius)) {
+    status('Anna hakuetäisyys metreinä, esimerkiksi 500.');
+    distanceField.focus();
     return;
   }
   const kinds = selectedKinds();
@@ -444,13 +459,16 @@ byId('find').addEventListener('click', async () => {
     remainingPlaces = places.filter(place => kinds.has(place.kind)
       && (place.kind !== 'disc' || !minimum || (place.minutes ?? durationLimit(place.note)) >= minimum))
       .map(place => ({...place, air: origin.distanceTo([place.lat, place.lng])}))
+      .filter(place => place.air <= radius)
       .sort((a, b) => a.air - b.air);
     ranked = [];
     results = [];
     current = -1;
     exhausted = false;
     if (!remainingPlaces.length) {
-      status('Tälle valinnalle ei löytynyt kohteita aineistosta.');
+      status(Number.isFinite(radius)
+        ? 'Valitulla hakuetäisyydellä ei löytynyt sopivia paikkoja.'
+        : 'Tälle valinnalle ei löytynyt kohteita aineistosta.');
       return;
     }
     await showNext();
