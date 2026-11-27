@@ -115,6 +115,21 @@ label {
   cursor:pointer;
 }
 
+fieldset label:has(input:disabled) {
+  border-color:#395569;
+  background:#0e263b;
+  color:#91a9ba;
+  cursor:default;
+}
+
+fieldset label:has(input:disabled) .icon {
+  opacity:.48;
+}
+
+fieldset input:disabled {
+  opacity:.65;
+}
+
 label.selected {
   border-color:var(--blue);
   background:#193b57;
