@@ -35,7 +35,7 @@ byId('city-subheading').textContent = city.name === 'Tampere' ? 'Tampereen pysä
 byId('turku-sources').hidden = cityKey !== 'turku';
 byId('tampere-sources').hidden = cityKey !== 'tampere';
 byId('center-origin').textContent = 'Valitse ' + city.center;
-const version = 'map-expand-1';
+const version = 'tampere-curbside-1';
 const routePause = 1100;
 const routeTimeout = 11000;
 const resultBatch = 16;
@@ -345,10 +345,10 @@ function renderResult(place, route) {
     if (place.minutes || place.schedule?.some(Boolean)) signs.append(discPlate(place));
   }
   signs.hidden = !signs.childElementCount;
-  const condition = place.kind === 'free' && place.source !== 'turku-signs'
-    ? 'OpenStreetMapissa maksuttomaksi merkitty kadunvarsikohde. Tarkista paikalla voimassa olevat pysäköintiehdot.'
-    : place.source === 'tampere'
-      ? 'Pysäköintiehdot perustuvat Tampereen pysäköintialueaineistoon. Tarkista merkit paikan päällä.'
+  const condition = place.source === 'tampere'
+    ? 'Pysäköintiehdot perustuvat Tampereen pysäköintialueaineistoon. Tarkista merkit paikan päällä.'
+    : place.kind === 'free' && place.source !== 'turku-signs'
+      ? 'OpenStreetMapissa maksuttomaksi merkitty kadunvarsikohde. Tarkista paikalla voimassa olevat pysäköintiehdot.'
       : 'Pysäköintiehto perustuu merkkirekisteriin. Tarkista merkit paikan päällä.';
   const restrictions = place.restrictions || [];
   byId('condition').textContent = [condition, ...restrictions].join(' · ');
