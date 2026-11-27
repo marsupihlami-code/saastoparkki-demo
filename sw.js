@@ -1,7 +1,7 @@
 'use strict';
-const version = 'fee-audit-1';
+const version = 'sign-only-1';
 const cacheName = 'saastoparkki-' + version;
-const versioned = ['app.js', 'style.css', 'leaflet.js', 'leaflet.css', 'manifest.webmanifest', 'places-city.json', 'places-osm.json', 'places-tampere.json'];
+const versioned = ['app.js', 'style.css', 'leaflet.js', 'leaflet.css', 'manifest.webmanifest', 'places-city.json', 'places-tampere.json'];
 const shell = ['./', ...versioned.map(file => file + '?v=' + version), 'possu.png', 'inva.webp',
   'icon-180.png', 'icon-192.png', 'icon-512.png', 'icon-maskable.png'];
 self.addEventListener('install', event => {

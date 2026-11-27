@@ -5,14 +5,12 @@ const cities = {
   turku: {
     name: 'Turku', inCity: 'Turussa', center: 'Kauppatori', originLabel: 'Aurakatu, Kauppatorin vieressä',
     origin: [60.451452, 22.265599],
-    downtown: [[60.438, 22.240], [60.466, 22.282]],
     coverage: [[60.35, 22.05], [60.66, 22.48]],
-    files: ['places-city.json', 'places-osm.json']
+    files: ['places-city.json']
   },
   tampere: {
     name: 'Tampere', inCity: 'Tampereella', center: 'Keskustori', originLabel: 'Keskustori',
     origin: [61.49772, 23.7595],
-    downtown: [[61.489, 23.71], [61.505, 23.805]],
     coverage: [[61.42, 23.57], [61.64, 23.97]],
     files: ['places-tampere.json']
   }
@@ -37,7 +35,7 @@ byId('city-subheading').textContent = city.name === 'Tampere' ? 'Tampereen pysä
 byId('turku-sources').hidden = cityKey !== 'turku';
 byId('tampere-sources').hidden = cityKey !== 'tampere';
 byId('center-origin').textContent = 'Valitse ' + city.center;
-const version = 'fee-audit-1';
+const version = 'sign-only-1';
 const routePause = 1100;
 const routeTimeout = 11000;
 const resultBatch = 16;
@@ -86,7 +84,6 @@ let requestTime = 0;
 let routeCooldownUntil = 0;
 let busy = false;
 let locating = false;
-let freeOutsideCoverage = false;
 
 class DataError extends Error {}
 async function loadPlaces() {
@@ -95,7 +92,7 @@ async function loadPlaces() {
       const response = await fetch(file + '?v=' + version);
       if (!response.ok) throw new DataError();
       return response.json();
-    })).then(groups => groups.flat());
+    })).then(groups => groups.flat().filter(place => place.kind !== 'free'));
   }
   try {
     return await placesPromise;
@@ -107,9 +104,7 @@ async function loadPlaces() {
 
 function status(message) {
   const id = byId('result').hidden ? 'status' : 'result-status';
-  const coverageNote = id === 'result-status' && freeOutsideCoverage
-    ? ' Maksuttomia alueita haetaan vain keskustasta.' : '';
-  byId(id).textContent = message + coverageNote;
+  byId(id).textContent = message;
 }
 
 status('Valitse lähtöpiste kartalta tai käytä sijaintiasi.');
@@ -174,7 +169,7 @@ kindField.addEventListener('change', () => {
   byId('disc-filter').hidden = !selectedKinds().has('disc');
 });
 function selectedKinds() {
-  return new Set(Array.from(kindField.querySelectorAll('input:checked'), input => input.value));
+  return new Set(Array.from(kindField.querySelectorAll('input:checked:not(:disabled)'), input => input.value));
 }
 function durationLimit(note) {
   const match = (note || '').match(/(\d+)\s*(h|min)\b/i);
@@ -415,17 +410,11 @@ byId('find').addEventListener('click', async () => {
   const kinds = selectedKinds();
   if (!kinds.size) {
     status('Valitse vähintään yksi paikkatyyppi.');
-    kindField.querySelector('input').focus();
+    kindField.querySelector('input:not(:disabled)').focus();
     return;
   }
   if (!L.latLngBounds(city.coverage).contains(origin)) {
     status('Olet hakualueen ulkopuolella. Valitse lähtöpiste ' + city.inCity + ' tai vaihda kaupunkia.');
-    return;
-  }
-  freeOutsideCoverage = kinds.has('free') && !L.latLngBounds(city.downtown).contains(origin);
-  if (freeOutsideCoverage) kinds.delete('free');
-  if (!kinds.size) {
-    status('Maksuttomien alueiden aineisto kattaa keskustan. Valitse hakukohta keskustasta tai vaihda kiekko- tai invapaikkahakuun.');
     return;
   }
   busy = true;
@@ -474,7 +463,7 @@ byId('previous').addEventListener('click', () => {
 byId('back').addEventListener('click', () => {
   showSearch();
   status('Lähtöpiste: ' + originLabel + '. Valitse paikkatyypit.');
-  (kindField.querySelector('input:checked') || kindField.querySelector('input')).focus();
+  (kindField.querySelector('input:checked:not(:disabled)') || kindField.querySelector('input:not(:disabled)')).focus();
 });
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   navigator.serviceWorker.register('sw.js').catch(() => {});
