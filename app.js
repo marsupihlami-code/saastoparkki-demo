@@ -35,7 +35,7 @@ byId('city-subheading').textContent = city.name === 'Tampere' ? 'Tampereen pysä
 byId('turku-sources').hidden = cityKey !== 'turku';
 byId('tampere-sources').hidden = cityKey !== 'tampere';
 byId('center-origin').textContent = 'Valitse ' + city.center;
-const version = 'street-parking-2';
+const version = 'parking-plates-1';
 const routePause = 1100;
 const routeTimeout = 11000;
 const resultBatch = 16;
@@ -92,7 +92,7 @@ async function loadPlaces() {
       const response = await fetch(file + '?v=' + version);
       if (!response.ok) throw new DataError();
       return response.json();
-    })).then(groups => groups.flat());
+    })).then(groups => groups.flat().filter(place => !place.restrictedVehicle));
   }
   try {
     return await placesPromise;
@@ -114,6 +114,7 @@ function showSearch() {
   routeButton.hidden = true;
   byId('result').hidden = true;
   byId('condition').hidden = true;
+  byId('parking-plate-details').hidden = true;
   document.querySelector('main').classList.remove('has-result');
   byId('result-status').textContent = '';
   byId('search').hidden = false;
@@ -333,7 +334,24 @@ function renderResult(place, route) {
       : 'Pysäköintiehto perustuu merkkirekisteriin. Tarkista merkit paikan päällä.';
   const restrictions = place.restrictions || [];
   byId('condition').textContent = [condition, ...restrictions].join(' · ');
-  byId('result-limits').hidden = !restrictions.length;
+  const registeredPlates = place.plates || [];
+  const plateDetails = byId('parking-plate-details');
+  const plateList = byId('parking-plate-list');
+  plateList.replaceChildren(...registeredPlates.map(registered => {
+    const item = document.createElement('li');
+    const title = document.createElement('strong');
+    title.textContent = registered.code + ' ' + registered.label;
+    item.append(title);
+    if (registered.text) {
+      const note = document.createElement('span');
+      note.textContent = registered.text;
+      item.append(note);
+    }
+    return item;
+  }));
+  plateDetails.hidden = !registeredPlates.length;
+  byId('result-limits').textContent = registeredPlates.length ? 'Näytä kaikki lisäkilvet' : 'Katso kohteen rajoitukset';
+  byId('result-limits').hidden = !registeredPlates.length && !restrictions.length;
   const directions = new URL('https://www.google.com/maps/dir/');
   directions.search = new URLSearchParams({
     api: '1',

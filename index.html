@@ -7,14 +7,14 @@
 <meta name="description" content="Etsi maksuton kadunvarsipaikka, kiekkopaikka tai invapaikka Turusta tai Tampereelta.">
 <title>SÄÄSTÖPARKKI</title>
 <link rel="icon" href="possu.png">
-<link rel="manifest" href="manifest.webmanifest?v=street-parking-2">
+<link rel="manifest" href="manifest.webmanifest?v=parking-plates-1">
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="stylesheet" href="leaflet.css?v=street-parking-2">
-<link rel="stylesheet" href="style.css?v=street-parking-2">
-<script defer src="leaflet.js?v=street-parking-2"></script>
-<script defer src="app.js?v=street-parking-2"></script>
+<link rel="stylesheet" href="leaflet.css?v=parking-plates-1">
+<link rel="stylesheet" href="style.css?v=parking-plates-1">
+<script defer src="leaflet.js?v=parking-plates-1"></script>
+<script defer src="app.js?v=parking-plates-1"></script>
 <body>
 <main>
 <header><img src="possu.png" alt="" width="58" height="52"><span>SÄÄSTÖPARKKI</span><button type="button" id="open-info" aria-haspopup="dialog">Lisätiedot</button></header>
@@ -40,7 +40,7 @@
 </div>
 </section>
 </main>
-<dialog id="info" aria-labelledby="info-title"><div class="info-title"><h2 id="info-title">Lisätiedot</h2><form method="dialog"><button type="submit" autofocus>Sulje</button></form></div><p id="condition" hidden></p><h3>Lisää SÄÄSTÖPARKKI aloitusnäyttöön</h3>
+<dialog id="info" aria-labelledby="info-title"><div class="info-title"><h2 id="info-title">Lisätiedot</h2><form method="dialog"><button type="submit" autofocus>Sulje</button></form></div><p id="condition" hidden></p><section id="parking-plate-details" hidden aria-labelledby="parking-plate-title"><h3 id="parking-plate-title">Kohteen lisäkilvet</h3><ul id="parking-plate-list"></ul></section><h3>Lisää SÄÄSTÖPARKKI aloitusnäyttöön</h3>
 <p><strong>iPhone</strong><br>Avaa tämä sivu Safarissa. Napauta <strong>Jaa</strong> ja valitse <strong>Lisää Koti-valikkoon</strong>. Jos <strong>Avaa verkkoappina</strong> näkyy, laita se päälle. Napauta <strong>Lisää</strong>.</p>
 <p><strong>Android</strong><br>Avaa tämä sivu Chromessa. Napauta kolmen pisteen valikkoa (⋮) ja valitse <strong>Asenna ja luo pikakuvake</strong> tai <strong>Lisää aloitusnäyttöön</strong>. Valitse <strong>Asenna</strong>, jos sitä tarjotaan.</p>
 <p>Avaa SÄÄSTÖPARKKI jatkossa possukuvakkeesta. Verkkoappina kartta saa enemmän tilaa, kun selaimen osoite- ja alapalkki jäävät pois.</p><p>Navigointi avautuu valintasi mukaan Googlen tai Applen karttapalvelussa. OpenStreetMapin karttalaattojen lataus välittää palvelulle IP-osoitteen ja tiedon katsellusta kartta-alueesta.</p><p>Ilmaishaku käyttää OpenStreetMapissa maksuttomaksi merkittyjä kadunvarsipaikkoja. Hakuaineistoa on verrattu kaupungin pysäköintirajoituksiin. Tarkista paikan päällä voimassa olevat ehdot.</p><div id="turku-sources"><p>Kiekko- ja invapaikkoja haetaan Turun kaupungin liikennemerkkiaineistosta.</p><p><a href="https://avoindata.suomi.fi/data/fi/dataset/turun-kaupungin-liikennemerkit">Pysäköintimerkit © Turun kaupunki</a>, CC BY 4.0. Kartta ja reitityksen karttadata © <a href="https://www.openstreetmap.org/copyright">OpenStreetMapin tekijät</a>, ODbL.</p><details id="parking-sign-review"><summary>Tarkistettavat P-merkit Turussa</summary>

@@ -444,3 +444,6 @@ label.selected .icon {
 .plates > .main-sign:has(+ .accessible-sign) { justify-self: center; }
 
 #result-limits { margin: 0; padding-block: 4px; }
+
+#parking-plate-list li + li { margin-top: 12px; }
+#parking-plate-list li span { display: block; white-space: pre-line; }
