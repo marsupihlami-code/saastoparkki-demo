@@ -1,7 +1,7 @@
 'use strict';
-const version = 'dim-free-1';
+const version = 'street-parking-1';
 const cacheName = 'saastoparkki-' + version;
-const versioned = ['app.js', 'style.css', 'leaflet.js', 'leaflet.css', 'manifest.webmanifest', 'places-city.json', 'places-tampere.json'];
+const versioned = ['app.js', 'style.css', 'leaflet.js', 'leaflet.css', 'manifest.webmanifest', 'places-turku-street.json', 'places-tampere-street.json'];
 const shell = ['./', ...versioned.map(file => file + '?v=' + version), 'possu.png', 'inva.webp',
   'icon-180.png', 'icon-192.png', 'icon-512.png', 'icon-maskable.png'];
 self.addEventListener('install', event => {

@@ -6,13 +6,13 @@ const cities = {
     name: 'Turku', inCity: 'Turussa', center: 'Kauppatori', originLabel: 'Aurakatu, Kauppatorin vieressä',
     origin: [60.451452, 22.265599],
     coverage: [[60.35, 22.05], [60.66, 22.48]],
-    files: ['places-city.json']
+    files: ['places-turku-street.json']
   },
   tampere: {
     name: 'Tampere', inCity: 'Tampereella', center: 'Keskustori', originLabel: 'Keskustori',
     origin: [61.49772, 23.7595],
     coverage: [[61.42, 23.57], [61.64, 23.97]],
-    files: ['places-tampere.json']
+    files: ['places-tampere-street.json']
   }
 };
 const requestedCity = new URLSearchParams(location.search).get('city');
@@ -35,7 +35,7 @@ byId('city-subheading').textContent = city.name === 'Tampere' ? 'Tampereen pysä
 byId('turku-sources').hidden = cityKey !== 'turku';
 byId('tampere-sources').hidden = cityKey !== 'tampere';
 byId('center-origin').textContent = 'Valitse ' + city.center;
-const version = 'dim-free-1';
+const version = 'street-parking-1';
 const routePause = 1100;
 const routeTimeout = 11000;
 const resultBatch = 16;
@@ -92,7 +92,7 @@ async function loadPlaces() {
       const response = await fetch(file + '?v=' + version);
       if (!response.ok) throw new DataError();
       return response.json();
-    })).then(groups => groups.flat().filter(place => place.kind !== 'free'));
+    })).then(groups => groups.flat());
   }
   try {
     return await placesPromise;
@@ -327,7 +327,7 @@ function renderResult(place, route) {
   }
   signs.hidden = !signs.childElementCount;
   const condition = place.kind === 'free'
-    ? 'OpenStreetMapissa maksuttomaksi merkitty alue. Tarkista maksullisuus liikennemerkistä.'
+    ? 'OpenStreetMapissa maksuttomaksi merkitty kadunvarsikohde. Tarkista paikalla voimassa olevat pysäköintiehdot.'
     : place.source === 'tampere'
       ? 'Pysäköintiehdot perustuvat Tampereen pysäköintialueaineistoon. Tarkista merkit paikan päällä.'
       : 'Pysäköintiehto perustuu merkkirekisteriin. Tarkista merkit paikan päällä.';
