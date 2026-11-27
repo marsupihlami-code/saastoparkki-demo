@@ -376,6 +376,45 @@ main.has-result #show-route:not([hidden]) {
   gap: 8px;
 }
 
+#toggle-search-map {
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  width: 56px;
+  height: 44px;
+  margin-inline: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--blue);
+}
+
+#toggle-search-map[aria-expanded="false"] svg { transform: rotate(180deg); }
+main.has-result #toggle-search-map,
+main.search-map-expanded .intro,
+main.search-map-expanded .panel { display: none; }
+
+main.search-map-expanded {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100vh;
+  height: 100dvh;
+}
+
+main.search-map-expanded .map-wrap { height: 100%; min-height: 0; }
+
+@media (orientation: landscape) and (max-height: 540px) {
+  main:not(.has-result):not(.search-map-expanded) {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    height: 100dvh;
+  }
+  main:not(.has-result):not(.search-map-expanded) .map-wrap { height: 100%; }
+  main:not(.has-result):not(.search-map-expanded) .panel { grid-area: 2 / 2 / 4; }
+  #toggle-search-map { grid-area: 3 / 1; }
+}
+
 .icon svg {
   display: block;
   width: 32px;

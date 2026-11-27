@@ -35,7 +35,7 @@ byId('city-subheading').textContent = city.name === 'Tampere' ? 'Tampereen pysä
 byId('turku-sources').hidden = cityKey !== 'turku';
 byId('tampere-sources').hidden = cityKey !== 'tampere';
 byId('center-origin').textContent = 'Valitse ' + city.center;
-const version = 'linnankatu-75-1';
+const version = 'map-expand-1';
 const routePause = 1100;
 const routeTimeout = 11000;
 const resultBatch = 16;
@@ -61,8 +61,26 @@ let originChosen = false;
 const originMarker = L.circleMarker(origin, {radius: 8, color: '#fff', weight: 2, fillColor: '#145ed4', fillOpacity: 1}).addTo(map);
 const routeLayer = L.layerGroup().addTo(map);
 const routeButton = byId('show-route');
+const searchForm = byId('search');
+const searchMapToggle = byId('toggle-search-map');
+const main = document.querySelector('main');
 let routeBounds;
 let parkingMarker;
+
+function setSearchMapExpanded(expanded) {
+  main.classList.toggle('search-map-expanded', expanded);
+  searchForm.hidden = expanded;
+  searchMapToggle.setAttribute('aria-expanded', String(!expanded));
+  searchMapToggle.setAttribute('aria-label', expanded
+    ? 'Pienennä kartta ja näytä hakuvalinnat'
+    : 'Laajenna kartta ja piilota hakuvalinnat');
+}
+
+searchMapToggle.addEventListener('click', () => {
+  setSearchMapExpanded(!searchForm.hidden);
+  map.invalidateSize({animate: false});
+  searchMapToggle.scrollIntoView({block: 'nearest'});
+});
 
 function showRouteOverview() {
   routeButton.hidden = true;
@@ -115,9 +133,9 @@ function showSearch() {
   byId('result').hidden = true;
   byId('condition').hidden = true;
   byId('parking-plate-details').hidden = true;
-  document.querySelector('main').classList.remove('has-result');
+  main.classList.remove('has-result');
   byId('result-status').textContent = '';
-  byId('search').hidden = false;
+  setSearchMapExpanded(false);
   routeLayer.clearLayers();
   map.invalidateSize({pan: false});
 }
@@ -361,10 +379,11 @@ function renderResult(place, route) {
   });
   byId('directions').href = directions.href;
   byId('apple-maps').href = 'https://maps.apple.com/?dirflg=d&daddr=' + encodeURIComponent(place.lat + ',' + place.lng);
-  byId('search').hidden = true;
+  setSearchMapExpanded(false);
+  searchForm.hidden = true;
   byId('result').hidden = false;
   byId('condition').hidden = false;
-  document.querySelector('main').classList.add('has-result');
+  main.classList.add('has-result');
   const notice = route ? (route.distance > 3000 ? 'Kohde on yli 3 km:n ajomatkan päässä. ' : '') : 'Ajoreittiä ei saatavilla. ';
   status(notice + 'Järjestelmä ei tiedä vapaiden paikkojen määrää.');
   byId('place').focus({preventScroll: true});
@@ -425,7 +444,7 @@ function searchRadius(value) {
   return /^\d+$/.test(text) && Number.isSafeInteger(metres) && metres > 0 ? metres : NaN;
 }
 
-byId('search').addEventListener('submit', async event => {
+searchForm.addEventListener('submit', async event => {
   event.preventDefault();
   if (busy || locating) return;
   if (!originChosen) {
