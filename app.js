@@ -37,7 +37,7 @@ byId('city-subheading').textContent = city.name === 'Tampere' ? 'Tampereen pysä
 byId('turku-sources').hidden = cityKey !== 'turku';
 byId('tampere-sources').hidden = cityKey !== 'tampere';
 byId('center-origin').textContent = 'Valitse ' + city.center;
-const version = 'area-route-1';
+const version = 'fee-audit-1';
 const routePause = 1100;
 const routeTimeout = 11000;
 const resultBatch = 16;
@@ -272,7 +272,7 @@ function plate(label, main = false) {
   return element;
 }
 
-const titles = {free: 'Ilmainen pysäköinti', disc: 'Kiekkopaikka', accessible: 'Invapaikka'};
+const titles = {free: 'Aineistossa maksuton', disc: 'Kiekkopaikka', accessible: 'Invapaikka'};
 const accessibleSign = '<img class="accessible-sign" src="inva.webp" alt="">';
 
 function renderResult(place, route) {
@@ -332,7 +332,7 @@ function renderResult(place, route) {
   }
   signs.hidden = !signs.childElementCount;
   const condition = place.kind === 'free'
-    ? 'OpenStreetMapissa maksuttomaksi merkitty alue. Tarkista ehdot paikan päällä.'
+    ? 'OpenStreetMapissa maksuttomaksi merkitty alue. Tarkista maksullisuus liikennemerkistä.'
     : place.source === 'tampere'
       ? 'Pysäköintiehdot perustuvat Tampereen pysäköintialueaineistoon. Tarkista merkit paikan päällä.'
       : 'Pysäköintiehto perustuu merkkirekisteriin. Tarkista merkit paikan päällä.';
