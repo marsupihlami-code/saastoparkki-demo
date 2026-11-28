@@ -1,5 +1,5 @@
 'use strict';
-const version = 'turku-zones-1';
+const version = 'nuottasaarenkatu-area-1';
 const cacheName = 'saastoparkki-' + version;
 const versioned = ['app.js', 'style.css', 'leaflet.js', 'leaflet.css', 'manifest.webmanifest', 'places-turku-street.json', 'places-tampere-street.json', 'turku-parking-zones.geojson'];
 const shell = ['./', ...versioned.map(file => file + '?v=' + version), 'possu.png', 'inva.webp',
