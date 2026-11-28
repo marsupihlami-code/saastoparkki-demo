@@ -35,7 +35,7 @@ byId('city-subheading').textContent = city.name === 'Tampere' ? 'Tampereen pysä
 byId('turku-sources').hidden = cityKey !== 'turku';
 byId('tampere-sources').hidden = cityKey !== 'tampere';
 byId('center-origin').textContent = 'Valitse ' + city.center;
-const version = 'nuottasaarenkatu-area-1';
+const version = 'nuottasaarenkatu-area-2';
 const routePause = 1100;
 const routeTimeout = 11000;
 const resultBatch = 16;
