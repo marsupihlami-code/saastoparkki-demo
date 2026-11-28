@@ -73,6 +73,38 @@ p {
   color:#092039;
 }
 
+.map-legend {
+  position: absolute;
+  inset: auto auto 21px 8px;
+  z-index: 450;
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  border-radius: 6px;
+  padding: 4px 7px;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: .75rem;
+  line-height: 1.25;
+  pointer-events: none;
+}
+
+.map-legend span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.map-legend span::before {
+  content: "";
+  width: 12px;
+  border-top: 2px solid var(--blue);
+}
+
+#turku-zone-key::before {
+  border-top: 2px dashed #efad51;
+}
+
 .loc {
   position:absolute;
   top:12px;

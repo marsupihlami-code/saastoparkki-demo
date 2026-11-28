@@ -35,7 +35,7 @@ byId('city-subheading').textContent = city.name === 'Tampere' ? 'Tampereen pysä
 byId('turku-sources').hidden = cityKey !== 'turku';
 byId('tampere-sources').hidden = cityKey !== 'tampere';
 byId('center-origin').textContent = 'Valitse ' + city.center;
-const version = 'street-view-1';
+const version = 'turku-zones-1';
 const routePause = 1100;
 const routeTimeout = 11000;
 const resultBatch = 16;
@@ -118,6 +118,44 @@ async function loadPlaces() {
     placesPromise = undefined;
     throw new DataError();
   }
+}
+
+if (cityKey === 'turku') {
+  const pane = 'turkuParking';
+  map.createPane(pane).style.zIndex = '350';
+  const legend = byId('turku-map-legend');
+  function showLegendItem(id) {
+    byId(id).hidden = false;
+    legend.hidden = false;
+  }
+
+  fetch('turku-parking-zones.geojson?v=' + version)
+    .then(response => {
+      if (!response.ok) throw new DataError();
+      return response.json();
+    })
+    .then(zones => {
+      L.geoJSON(zones, {
+        pane,
+        interactive: false,
+        attribution: 'Maksuvyöhykkeet © Turun kaupunki, CC BY 4.0',
+        style: {color: '#96511d', weight: 2, dashArray: '5 4', fillColor: '#efad51', fillOpacity: 0.09}
+      }).addTo(map).bringToBack();
+      showLegendItem('turku-zone-key');
+    })
+    .catch(() => {});
+
+  loadPlaces()
+    .then(places => {
+      const spans = places.filter(place => place.kind === 'free' && place.ring);
+      for (const place of spans) {
+        L.polygon(place.ring, {
+          pane, interactive: false, color: '#147da6', weight: 2.5, fillColor: '#75d4fa', fillOpacity: 0.55
+        }).addTo(map);
+      }
+      if (spans.length) showLegendItem('turku-free-key');
+    })
+    .catch(() => {});
 }
 
 function status(message) {
