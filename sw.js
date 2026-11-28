@@ -1,5 +1,5 @@
 'use strict';
-const version = 'kupittaankatu-1';
+const version = 'street-view-1';
 const cacheName = 'saastoparkki-' + version;
 const versioned = ['app.js', 'style.css', 'leaflet.js', 'leaflet.css', 'manifest.webmanifest', 'places-turku-street.json', 'places-tampere-street.json'];
 const shell = ['./', ...versioned.map(file => file + '?v=' + version), 'possu.png', 'inva.webp',

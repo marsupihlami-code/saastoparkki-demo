@@ -348,7 +348,9 @@ main.has-result .panel { padding-block: 6px; min-width: 0; }
 .navigation-links { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .navigation-links a { display: grid; place-items: center; min-height: 44px; padding: 5px; text-align: center; }
 .navigation-links .secondary-map { margin: 0; color: var(--ink); border: 1px solid var(--line); border-radius: 12px; }
-#back { margin: 0; }
+.result-links { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; column-gap: 8px; }
+.result-links .text-link { min-height: 44px; margin: 0; }
+#street-view { display: inline-flex; align-items: center; font-weight: 700; }
 #info {
   width: min(calc(100% - 24px), 480px);
   max-height: 85vh;

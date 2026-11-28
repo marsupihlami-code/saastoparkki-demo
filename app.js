@@ -35,7 +35,7 @@ byId('city-subheading').textContent = city.name === 'Tampere' ? 'Tampereen pysä
 byId('turku-sources').hidden = cityKey !== 'turku';
 byId('tampere-sources').hidden = cityKey !== 'tampere';
 byId('center-origin').textContent = 'Valitse ' + city.center;
-const version = 'kupittaankatu-1';
+const version = 'street-view-1';
 const routePause = 1100;
 const routeTimeout = 11000;
 const resultBatch = 16;
@@ -379,6 +379,13 @@ function renderResult(place, route) {
   });
   byId('directions').href = directions.href;
   byId('apple-maps').href = 'https://maps.apple.com/?dirflg=d&daddr=' + encodeURIComponent(place.lat + ',' + place.lng);
+  const streetView = new URL('https://www.google.com/maps/@');
+  streetView.search = new URLSearchParams({
+    api: '1',
+    map_action: 'pano',
+    viewpoint: place.lat + ',' + place.lng
+  });
+  byId('street-view').href = streetView.href;
   setSearchMapExpanded(false);
   searchForm.hidden = true;
   byId('result').hidden = false;
